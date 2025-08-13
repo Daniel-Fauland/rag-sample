@@ -22,8 +22,11 @@ This sample provides a FastAPI backend with the following features:
 - [x] Global API error setup using custom error classes. See [errors.py](./backend/errors.py).
 - [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions). See `.env` file.
 - [x] Colored terminal output support with `termcolor`. See [helper.py](./backend/utils/helper.py)
-- [] Integration tests.
+- [ ] Integration tests.
 - [x] Containerization of backend.
+
+> TODO: Add Readme Chapter for Integration tests.
+> TODO: Replace existing test route with simply string conversion route --> upper, lower, camelCase, snake_case, etc.
 
 ## Prerequisites
 

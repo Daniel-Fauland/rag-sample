@@ -1,6 +1,8 @@
 import logging
 from config import config
-from utils.helper import color_sync
+from utils.config_helper import ConfigHelper
+
+color = ConfigHelper().config_color
 
 # Map the string to logging level
 LOGGING_LEVELS = {
@@ -31,7 +33,7 @@ class ColoredFormatter(logging.Formatter):
         # Color the levelname if it exists in our color mapping
         levelname = record.levelname
         if levelname in LEVEL_COLORS:
-            colored_level = color_sync(levelname, LEVEL_COLORS[levelname])
+            colored_level = color(levelname, LEVEL_COLORS[levelname])
             # Replace the levelname in the formatted string
             log_entry = log_entry.replace(levelname, colored_level)
         return log_entry

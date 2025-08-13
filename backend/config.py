@@ -102,21 +102,5 @@ try:
     config = Settings()
 except ValidationError as e:
     helper.validation_handler(error=e, field_mapping=field_mapping)
-    # error_message = helper.config_get_user_friendly_error_message(
-    #     error=e, field_mapping=field_mapping)
-    # print("\n" + "="*50)
-    # print(color("🚨 Configuration Error", "red", bold=True))
-    # print("="*50)
-    # print(error_message)
-    # print(
-    #     f"\n💡 Please check your {color(".env", "blue")} file and ensure all env variables are set properly.")
-    # print("="*50)
-    # sys.exit(1)
 except Exception as e:
     helper.exception_handler(error=e)
-    # print("\n" + "="*50)
-    # print(color("🚨 Unexpected Error", "red", bold=True))
-    # print("="*50)
-    # print(f"An unexpected error occurred: {str(e)}")
-    # print("="*50)
-    # sys.exit(1)
