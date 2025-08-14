@@ -17,8 +17,8 @@ class HealthCheckError(FastAPIExceptions):
     pass
 
 
-class FilePathNotFoundError(FastAPIExceptions):
-    """A provided filepath was invalid leading to a FilePathNotFoundError
+class XValueError(FastAPIExceptions):
+    """One or more wrong provided arguments led to a ValueError
     """
     pass
 
@@ -56,12 +56,12 @@ def register_errors(app: FastAPI):
     )
 
     app.add_exception_handler(
-        FilePathNotFoundError,
+        XValueError,
         create_exception_handler(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": "The file at the provided path was not found.",
-                    "error_code": "101_file_not_found_error",
-                    "solution": "Make sure you provide a valid file path."}
+            detail={"message": "ValueError due to one or more wrong arguments",
+                    "error_code": "101_value_error",
+                    "solution": "Make sure you provide valid arguments to the api."}
         )
     )
 

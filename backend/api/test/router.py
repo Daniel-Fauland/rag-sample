@@ -1,17 +1,17 @@
-from fastapi import APIRouter, Query
-from utils.helper import Utils
-from errors import FilePathNotFoundError
+from fastapi import APIRouter
+from models.test.request import TestRequest
 from models.test.response import TestResponse
+from core.test.service import TestService
+from errors import XValueError
 
 test_router = APIRouter()
+service = TestService()
 
 
-@test_router.get("/test/", status_code=200, response_model=TestResponse)
-async def test_utils(request: str = Query(..., description="The path to the file to read", example="./Readme.md")):
+@test_router.post("/test/", status_code=201, response_model=TestResponse)
+async def test_route(request: TestRequest):
     try:
-        file_content = await Utils.file_to_str(request)
-    except FileNotFoundError:
-        raise FilePathNotFoundError()
-    except Exception as e:
-        raise e
-    return TestResponse(message=file_content)
+        message = await service.convert_string(**request.model_dump())
+    except ValueError:
+        raise XValueError
+    return TestResponse(message=message, conversion_type=request.conversion_type)

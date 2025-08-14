@@ -6,6 +6,7 @@
 - [Prerequisites](#prerequisites)
 - [Run The Backend](#run-the-backend)
 - [Run With Docker](#run-with-docker)
+- [Integration Tests](#integration-tests)
 - [Env Variables Overview](#env-variables-overview)
 
 ## Feature Overview
@@ -21,12 +22,9 @@ This sample provides a FastAPI backend with the following features:
 - [x] Middleware with execution timer for api routes. See [middleware.py](./backend/middleware.py).
 - [x] Global API error setup using custom error classes. See [errors.py](./backend/errors.py).
 - [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions). See `.env` file.
-- [x] Colored terminal output support with `termcolor`. See [helper.py](./backend/utils/helper.py)
-- [ ] Integration tests.
+- [x] Colored terminal output support with `termcolor`. See [helper.py](./backend/utils/helper.py).
+- [x] Integration tests.
 - [x] Containerization of backend.
-
-> TODO: Add Readme Chapter for Integration tests.
-> TODO: Replace existing test route with simply string conversion route --> upper, lower, camelCase, snake_case, etc.
 
 ## Prerequisites
 
@@ -58,7 +56,7 @@ This sample provides a FastAPI backend with the following features:
 ## Run The Backend
 
 Make sure you have fulfilled all the prerequisites before proceeding. <br/>
-In order to run a python project using `uv` simply run the following command in the backend directory:
+In order to run a python project using `uv` simply run the following command within the `backend/` directory:
 
 ```
 uv run main.py
@@ -68,7 +66,7 @@ This will start the fastapi backend. It can be accessed in the browser by going 
 Swagger docs are available at: [localhost:8000/docs](http://localhost:8000/docs)
 
 > [!Tip]
-> If you want to link your vscode interpreter to the created venv for proper syntax highlighting follow these steps:
+> If you want to link your VSCode interpreter to the created venv for proper syntax highlighting follow these steps:
 >
 > 1. Run the backend at least once to create the `.venv` folder within the backend
 > 2. Navigate to `backend/.venv/bin` and copy the path of the python binary
@@ -95,7 +93,22 @@ Backend will run on [http://localhost:8000/](http://localhost:8000/)
 > Build: `docker build -t fastapi-server .` <br/>
 > Run: `docker run -p 8080:8080 -e IS_DOCKER=True fastapi-server`
 
-# Env Variables Overview
+## Integration Tests
+
+This backend sample also features Integration tests. This means that instead of testing only a specific method you can test an entire endpoint. Unit tests can also be added in the same way if needed. Under the hood the testing framework [pytest](https://docs.pytest.org/en/stable/) is used.
+You can simply run the tests by calling this method from within the `backend/` directory:
+
+```
+uv run tests/run_tests.py
+```
+
+Keep in mind that every test file within the [tests](./backend/tests/) directory must start with the prefix `test_` otherwise it won't be picked up by the `pytest` library.
+
+> [!Tip]
+> In case you need to execute any code before or after your tests you can simply edit the [run_tests.py](./backend/tests/run_tests.py) file and add your custom logic there. Placeholders have already been prepared. <br/>
+> If you are unfamiliar with writing tests have a look at [./test/test_test.py](./backend/tests/test/test_test.py)
+
+## Env Variables Overview
 
 Here is an overview about the environment variables in your `.env` file:
 

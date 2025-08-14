@@ -68,5 +68,5 @@ if __name__ == "__main__":
         uvicorn.run("main:app", host="0.0.0.0", port=config.fastapi_port, workers=config.workers,
                     log_level="info")
     else:
-        uvicorn.run("main:app", host="0.0.0.0", port=config.fastapi_port, workers=config.workers,
+        uvicorn.run("main:app", host="0.0.0.0", port=config.fastapi_port,
                     log_level="info", reload=True)
