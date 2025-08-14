@@ -1,4 +1,17 @@
-# RAG Sample
+# Ultimate FastAPI Starter Template
+
+A production-ready FastAPI template that accelerates your backend development with best practices baked in. This template combines modern tooling, comprehensive error handling, performance optimizations, and developer-friendly features to help you build robust, scalable APIs faster.
+
+### Why Choose This Template?
+
+- 🚀 **Instant Productivity**: Skip weeks of boilerplate setup and jump straight into building your business logic
+- 🛡️ **Production-Ready Security**: Built-in error handling, request validation, and environment management
+- 📊 **Performance Optimized**: Configured for high performance with customizable workers, thread pools, and optimized event loops
+- 🧪 **Testing Ready**: Integrated testing setup with pytest for both unit and integration tests
+- 🐳 **Docker Support**: Ready-to-use containerization with optimized configurations
+- 🔧 **Modern Tooling**: Uses `uv` for faster package management and includes essential development tools
+
+Perfect for teams and developers who want to build production-grade FastAPI applications without compromising on quality or spending time on initial setup.
 
 **Content Overview**
 
