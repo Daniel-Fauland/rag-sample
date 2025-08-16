@@ -1,6 +1,7 @@
 import re
 from pydantic import Field, field_validator, ValidationError
 from pydantic_settings import SettingsConfigDict, BaseSettings
+from functools import cached_property
 from utils.config_helper import helper
 
 # Quick access to color coding function
@@ -49,6 +50,63 @@ class Settings(BaseSettings):
         description="Wheter the backend runs within a docker container"
     )
 
+    # --- Database Settings ---
+    db_host: str = Field(
+        description="The host name of your sql database"
+    )
+
+    db_port: int = Field(
+        description="The Port on which your sql database runs"
+    )
+
+    db_name: str = Field(
+        description="The name of your database that you want to connect to"
+    )
+
+    db_passwd: str = Field(
+        description="The password of your sql database"
+    )
+
+    db_user: str = Field(
+        description="The user that the application will use when interacting with the db"
+    )
+
+    db_ssl: bool = Field(
+        default=True,
+        description="Wheter the connection between app and db should be established using ssl"
+    )
+
+    db_echo: bool = Field(
+        default=True,
+        description="Whether the backend should log its internal operations in the terminal"
+    )
+
+    # Database connection pool settings
+    db_pool_size: int = Field(
+        default=20,
+        description="Number of database connections to maintain in the pool"
+    )
+
+    db_max_overflow: int = Field(
+        default=30,
+        description="Additional connections allowed when pool is full"
+    )
+
+    db_pool_timeout: int = Field(
+        default=15,
+        description="Timeout in seconds waiting for available connection"
+    )
+
+    db_pool_recycle: int = Field(
+        default=3600,
+        description="Recycle connections after this many seconds"
+    )
+
+    @cached_property
+    def db_uri(self) -> str:
+        """Construct the database URI from individual components."""
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_passwd}@{self.db_host}:{self.db_port}/{self.db_name}"
+
     # --- Performance Settings ---
     thread_pool: int = Field(
         default=80,
@@ -77,11 +135,19 @@ class Settings(BaseSettings):
     @classmethod
     def validate_backend_version(cls, v: str) -> str:
         """Validate backend version is a valid version string."""
-        # if not v:
-        #     raise ValueError("backend version is required")
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             raise ValueError(
                 f"invalid version format {color(v)}. Must be in the format: {color("x.y.z (e.g. 1.2.3)")}")
+        return v
+
+    @field_validator("db_port")
+    @classmethod
+    def validate_db_port(cls, v: int) -> int:
+        """Validate database port is a valid port number."""
+        if not isinstance(v, int) or v < 1 or v > 65535:
+            raise ValueError(
+                f"invalid port number {color(v)}. Must be an integer between 1 and 65535"
+            )
         return v
 
     def validate_all(self) -> None:

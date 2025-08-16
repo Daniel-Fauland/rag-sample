@@ -17,8 +17,11 @@ Perfect for teams and developers who want to build production-grade FastAPI appl
 
 - [Feature Overview](#feature-overview)
 - [Prerequisites](#prerequisites)
-- [Run The Backend](#run-the-backend)
-- [Run With Docker](#run-with-docker)
+- [Postgres Database Setup](#postgres-database-setup)
+  - [Local Postgres DB](#local-postgres-db)
+  - [Online Postgres DB](#online-postgres-db)
+- [Run The Backend locally](#run-the-backend-locally)
+- [Run The Backend With Docker](#run-the-backend-with-docker)
 - [Integration Tests](#integration-tests)
 - [Env Variables Overview](#env-variables-overview)
 
@@ -26,7 +29,7 @@ Perfect for teams and developers who want to build production-grade FastAPI appl
 
 This sample provides a FastAPI backend with the following features:
 
-- [x] Using `uv` as a package manager.
+- [x] Using [uv](https://github.com/astral-sh/uv) as a package manager.
 - [x] Central [config.py](./backend/config.py) file for all env variables and settings.
 - [x] Immediate validation of variables inside of [config.py](./backend/config.py) using `pydantic-settings`.
 - [x] `Pydantic` models for api route request/response validation.
@@ -36,8 +39,16 @@ This sample provides a FastAPI backend with the following features:
 - [x] Global API error setup using custom error classes. See [errors.py](./backend/errors.py).
 - [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions). See `.env` file.
 - [x] Colored terminal output support with `termcolor`. See [helper.py](./backend/utils/helper.py).
-- [x] Integration tests.
-- [x] Containerization of backend.
+- [x] Integration tests. See [tests/](./backend/tests/).
+- [x] Containerization of backend. See [Dockerfile](./backend/Dockerfile).
+- [ ] Postgres db integration.
+
+> TODO: Alembic Migrations <br/>
+> TODO: DB Schemas using SQLModel <br/>
+> TODO: Dummy data ingestions <br/>
+> TODO: User authentication using JWT <br/>
+> TODO: User authorization <br/>
+> TODO: Integration test using test db <br/>
 
 ## Prerequisites
 
@@ -65,8 +76,90 @@ This sample provides a FastAPI backend with the following features:
   ```
   cd backend && cp .env.example .env
   ```
+- You need a PostgresDB database. The database can be hosted locally or on the cloud.
 
-## Run The Backend
+## Postgres Database Setup
+
+### Local Postgres DB
+
+You can install postgres locally on your machine or via Docker. Docker is straightforward and the process is the same for all machines therefore setup with docker will be shown:
+
+1. Make sure you have docker installed and the docker daemon is running.
+2. Define some settings for your postgres db:
+
+   ```
+   export PG_VERSION="17.6"
+   export PG_CONTAINER="db-be-pg"
+   export PG_NAME="backend"
+   export PG_USER="systemuser"
+   export PG_PASSWORD="mysecretpassword"
+   export PG_NETWORK_NAME="db-be-pg-network"
+   ```
+
+   > [!Note]
+   > If you change these default values make sure to also adjust the `.env` file to ensure correct credentials for the backend application.
+
+3. Get the postgres docker image. You can check the available versions [here](https://hub.docker.com/_/postgres):
+
+   ```
+   docker pull postgres:${PG_VERSION}
+   ```
+
+4. Create a docker network for your postgres db:
+
+   ```
+   docker network create ${PG_NETWORK_NAME}
+   ```
+
+5. Start the postgres instance:
+
+   ```
+   docker run --name ${PG_CONTAINER} --network ${PG_NETWORK_NAME} -p 5432:5432 -e POSTGRES_PASSWORD=${PG_PASSWORD} -e POSTGRES_DB=${PG_NAME} -e POSTGRES_USER=${PG_USER} -d postgres:${PG_VERSION}
+   ```
+
+6. Validate successful setup by connecting to it:
+
+   ```
+   docker run -it --rm --network ${PG_NETWORK_NAME} postgres psql -h ${PG_CONTAINER} -U ${PG_USER} -d ${PG_NAME}
+   ```
+
+   This will now prompt you for your password. Then you can test if your postgres db works properly by writing the following query:
+
+   ```
+   SELECT current_database(), current_user;
+   ```
+
+   (You can exit the postgres terminal session by simply typing `exit`.)
+
+   > [!Note]
+   > You can stop and remove the running postgres container with this command: <br/> > `docker stop ${PG_CONTAINER} && docker rm ${PG_CONTAINER}`
+
+   > [!Tip]
+   > You can now also connect to this database through any UI based database program like [pgAdmin](https://www.pgadmin.org) when providing the following credentials: <br/>
+   > Host name/address: `localhost` <br/>
+   > Port: `5432` <br/>
+   > Maintenance database: The value of: `${PG_NAME}` <br/>
+   > Username: The value of: `${PG_USER}` <br/>
+   > Password: The value of: `${PG_PASSWORD}`
+
+### Online Postgres DB
+
+If you use a cloud hosted postgres db you only need the to update the following credentials in the `.env` file.
+
+```
+# --- Database Settings ---
+DB_HOST="your-pg-db-domain.com"
+DB_NAME="your-db-name"
+DB_PASSWD="your-db-password"
+DB_USER="your-db-user"
+DB_PORT="your-db-port"
+DB_SSL="True"  # Probably True in most cases
+```
+
+> [!Note]
+> Make sure to check any potential ip/firewall resctrictions that might block your connection.
+
+## Run The Backend Locally
 
 Make sure you have fulfilled all the prerequisites before proceeding. <br/>
 In order to run a python project using `uv` simply run the following command within the `backend/` directory:
@@ -86,11 +179,9 @@ Swagger docs are available at: [localhost:8000/docs](http://localhost:8000/docs)
 > 3. Open the VSC Command Palette CMD + SHIFT + P (or CTRL + SHIFT + P for Windows) and enter the option `Python: Select Interpreter`
 > 4. Click on `Enter interpreter path...` and paste the python binary path
 
-## Run With Docker
+## Run The Backend With Docker
 
 In order to use this application with docker make sure [docker](https://www.docker.com/) is installed and running.
-
-### Docker backend
 
 Go to the `backend` folder in a new linux like terminal (For Windows: Use `git bash` for example) and run:
 

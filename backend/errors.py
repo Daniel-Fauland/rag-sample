@@ -12,7 +12,13 @@ class FastAPIExceptions(Exception):
 
 
 class HealthCheckError(FastAPIExceptions):
-    """An error occurred during the health check
+    """An error occurred during the fastapi cli health check
+    """
+    pass
+
+
+class HealthCheckDBError(FastAPIExceptions):
+    """An error occurred during the database health check
     """
     pass
 
@@ -50,8 +56,18 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "FastAPI CLI is not working properly.",
-                    "error_code": "100_health_check_error",
+                    "error_code": "100_health_check_fastapi_cli_error",
                     "solution": "Make sure FastAPI (CLI) is installed and configured properly."}
+        )
+    )
+
+    app.add_exception_handler(
+        HealthCheckDBError,
+        create_exception_handler(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Database connection could not be established properly",
+                    "error_code": "101_health_check_db_error",
+                    "solution": "Make sure the database is running, you provide valid credentials & there are no ip/firewall restrictions that block the connection"}
         )
     )
 
@@ -60,7 +76,7 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "ValueError due to one or more wrong arguments",
-                    "error_code": "101_value_error",
+                    "error_code": "102_value_error",
                     "solution": "Make sure you provide valid arguments to the api."}
         )
     )
@@ -70,7 +86,7 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": "Access Token is invalid or expired.",
-                    "error_code": "102_invalid_access_token",
+                    "error_code": "103_invalid_access_token",
                     "solution": "Provide a valid Access Token"}
         )
     )
@@ -80,7 +96,7 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": "Refresh token is invalid or expired",
-                    "error_code": "103_invalid_refresh_token",
+                    "error_code": "104_invalid_refresh_token",
                     "solution": "Provide a valid Refresh token"}
         )
     )

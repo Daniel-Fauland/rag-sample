@@ -1,18 +1,16 @@
 import uvicorn
-import anyio.to_thread
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from middleware import register_middleware
 from errors import register_errors
 from config import config, Settings
 from utils.logging import logger
-from utils.helper import color
-from core.health.service import HealthService
+from utils.life_span import LifeSpanService
 from api.test.router import test_router
 from api.health.router import health_router
 
 
-health_service = HealthService()
+life_span_service = LifeSpanService()
 
 
 @asynccontextmanager
@@ -22,15 +20,9 @@ async def life_span(app: FastAPI):
     Args:
         app (FastAPI): The FastAPI app instance.
     """
-    logger.info(f"{await color("SYSTEM")}:   Server is starting...")
-    limiter = anyio.to_thread.current_default_thread_limiter()
-    limiter.total_tokens = config.thread_pool
-    logger.debug(f"Thread pool size is: {await color(limiter.total_tokens)}")
-    logger.debug(f"Numer of workers are: {await color(config.workers)}")
-    health_check = await health_service.check_FastAPI_version()
-    logger.debug(health_check)
+    await life_span_service.life_span_pre_checks()
     yield
-    logger.info(f"{await color("SYSTEM")}:   Server is stopping...")
+    await life_span_service.life_span_post_checks()
 
 # FastAPI App instance
 app = FastAPI(
