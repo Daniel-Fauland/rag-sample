@@ -17,11 +17,14 @@ Perfect for teams and developers who want to build production-grade FastAPI appl
 
 - [Feature Overview](#feature-overview)
 - [Prerequisites](#prerequisites)
-- [Postgres Database Setup](#postgres-database-setup)
-  - [Local Postgres DB](#local-postgres-db)
-  - [Online Postgres DB](#online-postgres-db)
-- [Run The Backend locally](#run-the-backend-locally)
-- [Run The Backend With Docker](#run-the-backend-with-docker)
+- [Installation & Setup](#installation--setup)
+  - [Postgres Database Setup](#postgres-database-setup)
+    - [Local Postgres DB](#local-postgres-db)
+    - [Online Postgres DB](#online-postgres-db)
+  - [Database Migrations](#database-migrations)
+  - [Run the Backend](#run-the-backend)
+    - [Run Locally](#run-locally)
+    - [Run with Docker](#run-with-docker)
 - [Integration Tests](#integration-tests)
 - [Env Variables Overview](#env-variables-overview)
 
@@ -41,11 +44,11 @@ This sample provides a FastAPI backend with the following features:
 - [x] Colored terminal output support with `termcolor`. See [helper.py](./backend/utils/helper.py).
 - [x] Integration tests. See [tests/](./backend/tests/).
 - [x] Containerization of backend. See [Dockerfile](./backend/Dockerfile).
-- [ ] Postgres db integration.
+- [x] Postgres database integration. See [database/](./backend/database/)
+- [x] Alembic database migrations. See [migrations/](./backend/migrations/)
+- [ ] User authentication using JWT
+- [ ] User authorization using RBAC
 
-> TODO: Alembic Migrations <br/>
-> TODO: DB Schemas using SQLModel <br/>
-> TODO: Dummy data ingestions <br/>
 > TODO: User authentication using JWT <br/>
 > TODO: User authorization <br/>
 > TODO: Integration test using test db <br/>
@@ -77,10 +80,19 @@ This sample provides a FastAPI backend with the following features:
   cd backend && cp .env.example .env
   ```
 - You need a PostgresDB database. The database can be hosted locally or on the cloud.
+- After you set up your database make sure to run the alembic migrations to create the necessary tables and fill with inital data.
 
-## Postgres Database Setup
+## Installation & Setup
 
-### Local Postgres DB
+In order to install & run the application you need to do the following steps:
+
+- Setup up postgres database ([local](#local-postgres-db) or [online](#online-postgres-db))
+- Run database migrations in order to create the necessary tables and insert inital data
+- Install & run the backend ([local](#run-the-backend-locally) or [docker](#run-the-backend-with-docker))
+
+### Postgres Database Setup
+
+#### Local Postgres DB
 
 If you already have a postgres database running somewhere skip this step and go to [Online Postgres DB](#online-postgres-db) setup instead. <br/>
 You can install postgres locally on your machine or via Docker. Docker is straightforward and the process is the same for all machines therefore setup with docker will be shown:
@@ -95,6 +107,7 @@ You can install postgres locally on your machine or via Docker. Docker is straig
    export PG_USER="systemuser"
    export PG_PASSWORD="mysecretpassword"
    export PG_NETWORK_NAME="db-be-pg-network"
+   export PG_VOLUME="db-be-pg-data"
    ```
 
    **Important**: If you change these default values make sure to also adjust the `.env` file to ensure correct credentials for the backend application.
@@ -114,7 +127,7 @@ You can install postgres locally on your machine or via Docker. Docker is straig
 5. Start the postgres instance:
 
    ```
-   docker run --name ${PG_CONTAINER} --network ${PG_NETWORK_NAME} -p 5432:5432 -e POSTGRES_PASSWORD=${PG_PASSWORD} -e POSTGRES_DB=${PG_NAME} -e POSTGRES_USER=${PG_USER} -d postgres:${PG_VERSION}
+   docker run --name ${PG_CONTAINER} --network ${PG_NETWORK_NAME} -p 5432:5432 -e POSTGRES_PASSWORD=${PG_PASSWORD} -e POSTGRES_DB=${PG_NAME} -e POSTGRES_USER=${PG_USER} -v ${PG_VOLUME}:/var/lib/postgresql/data -d postgres:${PG_VERSION}
    ```
 
 6. Validate successful setup by connecting to it:
@@ -132,7 +145,8 @@ You can install postgres locally on your machine or via Docker. Docker is straig
    (You can exit the postgres terminal session by simply typing `exit`.)
 
 > [!Note]
-> You can stop and remove the running postgres container with this command: <br/> > `docker stop ${PG_CONTAINER} && docker rm ${PG_CONTAINER}`
+> You can stop and remove the running postgres container with this command: `docker stop ${PG_CONTAINER} && docker rm ${PG_CONTAINER}` <br/>
+> The next time you want to run the database you only have to run step 1, 2 & 5.
 
 > [!Tip]
 > You can now also connect to this database through any UI based database program like [pgAdmin](https://www.pgadmin.org) when providing the following credentials: <br/>
@@ -142,7 +156,7 @@ You can install postgres locally on your machine or via Docker. Docker is straig
 > Username: The value of: `${PG_USER}` <br/>
 > Password: The value of: `${PG_PASSWORD}`
 
-### Online Postgres DB
+#### Online Postgres DB
 
 If you use a cloud hosted postgres db you only need the to update the following credentials in the `.env` file.
 
@@ -159,7 +173,91 @@ DB_SSL="True"  # Probably True in most cases
 > [!Note]
 > Make sure to check any potential ip/firewall resctrictions that might block your connection.
 
-## Run The Backend Locally
+### Database Migrations
+
+<details>
+<summary>Creating the inital migration</summary>
+
+> [!Note] >**Note:** This step has already been done. There is no action required from your side. This is only for documentation purposes.
+
+Alembic is being used for DB migrations.
+In order to set up initial migrations for an async DB run the following command:
+
+```
+alembic init -t async migrations
+```
+
+The command above will create a migrations folder with some files in it. In order to make it work with a postgres database and pickup schema changes automatically some changes in [migrations/env.py](./migrations/env.py) and [migrations/script.py.mako](./migrations/script.py.mako) were necessary. All changes are marked with `# EDITED` within those files.
+
+Then you can run the following command to create the inital migration:
+
+```
+alembic revision --autogenerate -m "Initial migration including all tables"
+```
+
+> [!Note]
+> Keep in mind that `--autogenerate` will compare your db models with you actual schema in you postgres db. If you already have some tables in you postgres db (e.g. you created them manually or before switching to alembic) they won't be added to the migrations as migrations will only cover changes from your current state to the defined state. If you want your initial migration to completely generate all tables make sure to delete the tables from your postgres db before running the alembic command.
+
+</details>
+
+**Applying Migrations**:
+
+If you want to create a new migration after changing a model [schema](./backend/database/schemas/) run the following command:
+
+```
+alembic revision --autogenerate -m "put_message_here"
+```
+
+If you want to create a new migration for chaning some data (e.g. filling an existing table with initial data) without schema changes run this command instead:
+
+```
+alembic revision -m "put_message_here"
+```
+
+If you want to apply a migration and upgrade to the latest revision simply run the following command:
+
+```
+alembic upgrade head
+```
+
+If you want to undo all migrations and return to a state before the very first migration run:
+
+```
+alembic downgrade base
+```
+
+You can check the history of all revisions by running:
+
+```
+alembic history
+```
+
+You can upgrade | downgrade either to a specific revision id by typing:
+
+```
+alembic upgrade <revision_id>
+alembic downgrade <revision_id>
+```
+
+Or by upgrade | downgrade by a specific number of migrations:
+
+```
+alembic upgrade -2
+alembic downgrade -2
+```
+
+> [!Note]
+> 2 inital users for the application are already included with migration [8340e034cd24](./backend/migrations/versions/8340e034cd24_insert_inital_user_data.py)
+> The default credentials are:
+>
+> | Index | Email             | Password      |
+> | ----- | ----------------- | ------------- |
+> | 1     | admin@example.com | Adminpassword |
+> | 2     | user@example.com  | Userpassword  |
+
+### Run the Backend
+
+#### Run Locally
 
 Make sure you have fulfilled all the prerequisites before proceeding. <br/>
 In order to run a python project using `uv` simply run the following command within the `backend/` directory:
@@ -179,7 +277,7 @@ Swagger docs are available at: [localhost:8000/docs](http://localhost:8000/docs)
 > 3. Open the VSC Command Palette CMD + SHIFT + P (or CTRL + SHIFT + P for Windows) and enter the option `Python: Select Interpreter`
 > 4. Click on `Enter interpreter path...` and paste the python binary path
 
-## Run The Backend With Docker
+#### Run With Docker
 
 In order to use this application with docker make sure [docker](https://www.docker.com/) is installed and running.
 
@@ -196,6 +294,20 @@ Backend will run on [http://localhost:8000/](http://localhost:8000/)
 >
 > Build: `docker build -t fastapi-server .` <br/>
 > Run: `docker run -p 8080:8080 -e IS_DOCKER=True fastapi-server`
+
+#### Additional Tips
+
+If you want to test a specific function/file without starting the backend or even having a dedicated API route for it you can do so by calling a specific file directly like this:
+
+```
+uv run -m <folder>.<file>
+```
+
+An example can be found [here](./backend/utils/user.py) to simply test the hashing functionality:
+
+```
+uv run -m utils.user
+```
 
 ## Integration Tests
 
