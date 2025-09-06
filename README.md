@@ -247,7 +247,7 @@ alembic downgrade -2
 ```
 
 > [!Note]
-> 2 inital users for the application are already included with migration [8340e034cd24](./backend/migrations/versions/8340e034cd24_insert_inital_user_data.py)
+> 2 inital users for the application are already included with migration [3cb8a3670bf3](./backend/migrations/versions/3cb8a3670bf3_add_initial_data.py)
 > The default credentials are:
 >
 > | Index | Email             | Password      |
