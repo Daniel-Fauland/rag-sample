@@ -35,6 +35,7 @@ docker run \
     --volume /app/.venv \
     --publish 8000:8000 \
     -e IS_DOCKER=True \
+    -e DB_HOST=host.docker.internal \
     -e WORKERS=4 \
     $INTERACTIVE \
     $(docker build -q .) \

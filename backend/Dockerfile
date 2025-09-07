@@ -1,6 +1,13 @@
-# Dockerfile for the fastapi backend
-# Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+# Multi-stage Dockerfile for the fastapi backend
+# Stage 1: Build dependencies (with build tools)
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install the project into `/app`
 WORKDIR /app
@@ -26,11 +33,23 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
+# Stage 2: Runtime image (slim, no build tools)
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim as runtime
+
+# Set working directory
+WORKDIR /app
+
+# Copy the application code first
+COPY . /app
+
+# Copy the virtual environment from the builder stage
+COPY --from=builder /app/.venv /app/.venv
+
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Reset the entrypoint, don't invoke `uv`
 ENTRYPOINT []
 
-# Run the FastAPI application
+# Run the FastAPI application with uv
 CMD ["uv", "run", "main.py"]

@@ -293,7 +293,7 @@ Backend will run on [http://localhost:8000/](http://localhost:8000/)
 > In case you want to build & start the docker image manually instead of using the shell script simplly run the following commands:
 >
 > Build: `docker build -t fastapi-server .` <br/>
-> Run: `docker run -p 8080:8080 -e IS_DOCKER=True fastapi-server`
+> Run: `docker run -p 8080:8080 -e IS_DOCKER=True -e DB_HOST=host.docker.internal fastapi-server`
 
 #### Additional Tips
 
