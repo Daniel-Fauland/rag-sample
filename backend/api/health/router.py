@@ -7,7 +7,7 @@ health_router = APIRouter()
 health_service = HealthService()
 
 
-@health_router.get("/", response_model=HealthCheckResponse)
+@health_router.get("", response_model=HealthCheckResponse)
 async def get_fastapi_version() -> dict:
     """Check the FastAPI version
 

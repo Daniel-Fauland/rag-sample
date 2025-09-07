@@ -8,7 +8,7 @@ test_router = APIRouter()
 service = TestService()
 
 
-@test_router.post("/test/", status_code=201, response_model=TestResponse)
+@test_router.post("/test", status_code=201, response_model=TestResponse)
 async def test_route(request: TestRequest):
     try:
         message = await service.convert_string(**request.model_dump())
