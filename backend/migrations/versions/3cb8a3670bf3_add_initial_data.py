@@ -60,8 +60,19 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    # Remove the inserted rows if downgrading
+    # First, clean up ALL user_roles relationships that reference the roles we're about to delete
+    # This handles any user_roles records that might reference these roles
+    op.execute("""
+        DELETE FROM user_roles
+        WHERE role_id IN (
+            SELECT id FROM roles WHERE name IN ('admin', 'user')
+        )
+    """)
+
+    # Then remove the users
     op.execute("DELETE FROM users WHERE email = 'admin@example.com'")
     op.execute("DELETE FROM users WHERE email = 'user@example.com'")
+
+    # Finally remove the roles (now safe since no foreign key references exist)
     op.execute("DELETE FROM roles WHERE name = 'admin'")
     op.execute("DELETE FROM roles WHERE name = 'user'")

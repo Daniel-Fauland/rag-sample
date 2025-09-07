@@ -25,30 +25,65 @@ def upgrade() -> None:
     # Get current timestamp
     current_timestamp = datetime.now()
 
-    # Add Roles for User 1 (admin)
+    # Add admin role for User 1 (admin user gets both admin and user roles)
     op.execute(f"""
         INSERT INTO user_roles (user_id, role_id, assigned_at)
-        SELECT '0198c7ff-09a9-7b8c-9c6f-65996832605c', 1, '{current_timestamp}'
-        WHERE NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c' AND role_id = 1)
+        SELECT '0198c7ff-09a9-7b8c-9c6f-65996832605c', r.id, '{current_timestamp}'
+        FROM roles r
+        WHERE r.name = 'admin'
+        AND NOT EXISTS (
+            SELECT 1 FROM user_roles ur
+            WHERE ur.user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c'
+            AND ur.role_id = r.id
+        )
     """)
 
-    # Add Roles for User 1 (user)
+    # Add user role for User 1 (admin user also gets user role)
     op.execute(f"""
         INSERT INTO user_roles (user_id, role_id, assigned_at)
-        SELECT '0198c7ff-09a9-7b8c-9c6f-65996832605c', 2, '{current_timestamp}'
-        WHERE NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c' AND role_id = 2)
+        SELECT '0198c7ff-09a9-7b8c-9c6f-65996832605c', r.id, '{current_timestamp}'
+        FROM roles r
+        WHERE r.name = 'user'
+        AND NOT EXISTS (
+            SELECT 1 FROM user_roles ur
+            WHERE ur.user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c'
+            AND ur.role_id = r.id
+        )
     """)
 
-    # Add Roles for User 2 (user)
+    # Add user role for User 2 (regular user)
     op.execute(f"""
         INSERT INTO user_roles (user_id, role_id, assigned_at)
-        SELECT '0198c7ff-7032-7649-88f0-438321150e2c', 2, '{current_timestamp}'
-        WHERE NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = '0198c7ff-7032-7649-88f0-438321150e2c' AND role_id = 2)
+        SELECT '0198c7ff-7032-7649-88f0-438321150e2c', r.id, '{current_timestamp}'
+        FROM roles r
+        WHERE r.name = 'user'
+        AND NOT EXISTS (
+            SELECT 1 FROM user_roles ur
+            WHERE ur.user_id = '0198c7ff-7032-7649-88f0-438321150e2c'
+            AND ur.role_id = r.id
+        )
     """)
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.execute("DELETE FROM user_roles WHERE user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c' AND role_id = 1")
-    op.execute("DELETE FROM user_roles WHERE user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c' AND role_id = 2")
-    op.execute("DELETE FROM user_roles WHERE user_id = '0198c7ff-7032-7649-88f0-438321150e2c' AND role_id = 2")
+    # Remove admin role for User 1
+    op.execute("""
+        DELETE FROM user_roles
+        WHERE user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c'
+        AND role_id IN (SELECT id FROM roles WHERE name = 'admin')
+    """)
+
+    # Remove user role for User 1
+    op.execute("""
+        DELETE FROM user_roles
+        WHERE user_id = '0198c7ff-09a9-7b8c-9c6f-65996832605c'
+        AND role_id IN (SELECT id FROM roles WHERE name = 'user')
+    """)
+
+    # Remove user role for User 2
+    op.execute("""
+        DELETE FROM user_roles
+        WHERE user_id = '0198c7ff-7032-7649-88f0-438321150e2c'
+        AND role_id IN (SELECT id FROM roles WHERE name = 'user')
+    """)
