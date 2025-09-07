@@ -61,6 +61,11 @@ class UserInvalidCredentials(FastAPIExceptions):
     pass
 
 
+class UserNotVerified(FastAPIExceptions):
+    """The user account is not verified"""
+    pass
+
+
 def create_exception_handler(status_code: int, detail: str) -> Callable[[Request, Exception], JSONResponse]:
     async def exception_handler(request: Request, exc: FastAPIExceptions):
         return JSONResponse(
@@ -158,5 +163,15 @@ def register_errors(app: FastAPI):
             detail={"message": "The provided email/password combination does not not match any database entries",
                     "error_code": "108_user_invalid_credentials",
                     "solution": "Provide valid user credentials"}
+        )
+    )
+
+    app.add_exception_handler(
+        UserNotVerified,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "The user is not verified",
+                    "error_code": "109_user_unverified",
+                    "solution": "Contact your administrator for assistance"}
         )
     )

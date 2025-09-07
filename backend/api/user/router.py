@@ -1,19 +1,20 @@
-from datetime import timedelta
 from fastapi import APIRouter, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
-from models.user.request import SignupRequest, LoginRequest
-from models.user.response import SignupResponse, SigninResponse, UserModel
 from core.user.service import UserService
-from errors import UserEmailExists, UserInvalidCredentials
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
+from auth.auth import get_current_user
+from models.user.request import SignupRequest, LoginRequest
+from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel
+from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified
+from auth.auth import RefreshTokenBearer
 from database.session import get_session
-from config import config
 
 user_router = APIRouter()
 service = UserService()
 user_helper = UserHelper()
 jwt_handler = JWTHandler()
+refresh_token_bearer = RefreshTokenBearer()
 
 
 @user_router.post("/signup", status_code=201, response_model=SignupResponse)
@@ -48,30 +49,41 @@ async def login(user_credentials: LoginRequest, session: AsyncSession = Depends(
     if not password_valid:
         raise UserInvalidCredentials
 
-    # Convert roles to serializable format
-    serializable_roles = [
-        {
-            'id': role.id,
-            'name': role.name,
-            'is_active': role.is_active
-        } for role in user.roles
-    ]
+    if not user.is_verified:
+        raise UserNotVerified
 
-    access_token = await jwt_handler.create_access_token(
-        user_data={'id': str(user.id), 'email': user.email,
-                   'roles': serializable_roles},
-        refresh=False,
-        expiry=timedelta(minutes=config.jwt_access_token_expiry)
-    )
-
-    refresh_token = await jwt_handler.create_access_token(
-        user_data={'id': str(user.id), 'email': user.email},
-        refresh=True,
-        expiry=timedelta(days=config.jwt_refresh_token_expiry)
-    )
-
+    access_token, refresh_token = await service.create_access_tokens(user)
     return SigninResponse(
         message="Login successful",
         access_token=access_token,
         refresh_token=refresh_token,
     )
+
+
+@user_router.get("/refresh", status_code=200, response_model=RefreshResponse)
+async def get_new_refresh_token(token_details: dict = Depends(refresh_token_bearer), session: AsyncSession = Depends(get_session)):
+    user_id = token_details["user"]["id"]
+    user: UserModel | None = await service.get_user_by_id(id=user_id, session=session, include_roles=True)
+
+    if not user:
+        raise UserNotFound
+
+    if not user.is_verified:
+        raise UserNotVerified
+
+    access_token, refresh_token = await service.create_access_tokens(user)
+    return SigninResponse(
+        message="Refresh successful",
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
+
+
+@user_router.get("/me", status_code=200, response_model=UserModel)
+async def get_active_user(user: UserModel = Depends(get_current_user)):
+    """Get the current logged in user and return the user data
+
+    Returns:
+        UserModel: The user data including the associated roles
+    """
+    return user

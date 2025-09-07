@@ -46,10 +46,18 @@ class SignupResponse(BaseModel):
         True])
 
 
-class SigninResponse(BaseModel):
-    message: str = Field(..., description="A status message about the login", examples=[
-                         "Login successful"])
+class SigninRefreshModelBase(BaseModel):
     access_token: str = Field(..., description="The access JWT", examples=[
         "eyJhbG..."])
     refresh_token: str = Field(..., description="The refresh JWT", examples=[
         "eyJhbG..."])
+
+
+class SigninResponse(SigninRefreshModelBase):
+    message: str = Field(..., description="A status message about the login", examples=[
+                         "Login successful"])
+
+
+class RefreshResponse(SigninRefreshModelBase):
+    message: str = Field(..., description="A status message about the login", examples=[
+                         "Refresh successful"])

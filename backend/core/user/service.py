@@ -1,3 +1,5 @@
+import uuid
+from datetime import timedelta
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -5,27 +7,54 @@ from database.schemas.users import User
 from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
 from models.user.request import SignupRequest
+from models.user.response import UserModel
 from utils.user import UserHelper
-# from schemas.users import UserCreateModel
-# from utils.current_user import generate_password_hash
+from auth.jwt import JWTHandler
+from config import config
 
 user_helper = UserHelper()
+jwt_handler = JWTHandler()
 
 
 class UserService:
-    async def get_user_by_email(self, email: str, session: AsyncSession, include_roles: bool = False) -> User | None:
-        """Get a user by email"""
+    async def _get_user(self, session: AsyncSession, where_clause, include_roles: bool = False) -> User | None:
+        """Helper to get a user by a given where clause"""
         options = []
         if include_roles:
             options.append(selectinload(User.roles))
         statement = select(User)
-
         if options:
             statement = statement.options(*options)
-        statement = statement.where(User.email == email)
+        statement = statement.where(where_clause)
         result = await session.exec(statement)
         user = result.first()
         return user
+
+    async def get_user_by_id(self, id: uuid.UUID, session: AsyncSession, include_roles: bool = False) -> User | None:
+        """Get a user by their unique identifier.
+
+        Args:
+            id: The user's UUID
+            session: Database session
+            include_roles: Whether to eagerly load user roles
+
+        Returns:
+            User object if found, None otherwise
+        """
+        return await self._get_user(session=session, where_clause=User.id == id, include_roles=include_roles)
+
+    async def get_user_by_email(self, email: str, session: AsyncSession, include_roles: bool = False) -> User | None:
+        """Get a user by their email.
+
+        Args:
+            email: The user's email
+            session: Database session
+            include_roles: Whether to eagerly load user roles
+
+        Returns:
+            User object if found, None otherwise
+        """
+        return await self._get_user(session=session, where_clause=User.email == email, include_roles=include_roles)
 
     async def user_exists(self, email: str, session: AsyncSession) -> bool:
         user = await self.get_user_by_email(email, session)
@@ -57,3 +86,36 @@ class UserService:
 
         await session.commit()
         return new_user
+
+    async def create_access_tokens(self, user: UserModel) -> tuple[str, str]:
+        """
+        Create access and refresh JWT tokens for a given user.
+
+        Args:
+            user (UserModel): The user for whom to create the tokens.
+
+        Returns:
+            tuple[str, str]: A tuple containing the access token and refresh token.
+        """
+        # Convert roles to serializable format
+        serializable_roles = [
+            {
+                'id': role.id,
+                'name': role.name,
+                'is_active': role.is_active
+            } for role in user.roles
+        ]
+
+        access_token = await jwt_handler.create_access_token(
+            user_data={'id': str(user.id),
+                       'roles': serializable_roles},
+            refresh=False,
+            expiry=timedelta(minutes=config.jwt_access_token_expiry)
+        )
+
+        refresh_token = await jwt_handler.create_access_token(
+            user_data={'id': str(user.id)},
+            refresh=True,
+            expiry=timedelta(days=config.jwt_refresh_token_expiry)
+        )
+        return access_token, refresh_token
