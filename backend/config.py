@@ -107,6 +107,26 @@ class Settings(BaseSettings):
         """Construct the database URI from individual components."""
         return f"postgresql+asyncpg://{self.db_user}:{self.db_passwd}@{self.db_host}:{self.db_port}/{self.db_name}"
 
+    # --- JWT Settings ---
+    jwt_algorithm: str = Field(
+        default="HS256",
+        description="The JWT algorithm used for signing and verifying JWTs"
+    )
+
+    jwt_secret: str = Field(
+        description="The JWT secret key used for de-/encoding JWTs"
+    )
+
+    jwt_access_token_expiry: int = Field(
+        description="The life span of a generated access token in minutes",
+        default=15
+    )
+
+    jwt_refresh_token_expiry: int = Field(
+        description="The life span of a generated refresh token in days",
+        default=30
+    )
+
     # --- Performance Settings ---
     thread_pool: int = Field(
         default=80,
@@ -119,6 +139,7 @@ class Settings(BaseSettings):
     )
 
     # --- Validation methods ---
+    # - Validation of Basic Settings-
     @field_validator("logging_level")
     @classmethod
     def validate_logging_level(cls, v: str) -> str:
@@ -131,6 +152,7 @@ class Settings(BaseSettings):
             )
         return level
 
+    # - Validation of Environment Settings -
     @field_validator("backend_version")
     @classmethod
     def validate_backend_version(cls, v: str) -> str:
@@ -140,6 +162,7 @@ class Settings(BaseSettings):
                 f"invalid version format {color(v)}. Must be in the format: {color("x.y.z (e.g. 1.2.3)")}")
         return v
 
+    # - Validation of Database Settings -
     @field_validator("db_port")
     @classmethod
     def validate_db_port(cls, v: int) -> int:
@@ -147,6 +170,43 @@ class Settings(BaseSettings):
         if not isinstance(v, int) or v < 1 or v > 65535:
             raise ValueError(
                 f"invalid port number {color(v)}. Must be an integer between 1 and 65535"
+            )
+        return v
+
+    # - Validation of JWT Settings -
+    @field_validator("jwt_secret")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        """Validate JWT secret is at least 256 bits (32 bytes) long."""
+        # Convert to bytes to check length
+        secret_bytes = v.encode('utf-8')
+        min_bits = 256
+        min_bytes = min_bits // 8  # 32 bytes
+
+        if len(secret_bytes) < min_bytes:
+            raise ValueError(
+                f"JWT secret must be at least {color(str(min_bits))} bits ({color(str(min_bytes))} bytes) long. "
+                f"Current length: {color(str(len(secret_bytes) * 8))} bits ({color(str(len(secret_bytes)))} bytes)"
+            )
+        return v
+
+    @field_validator("jwt_access_token_expiry")
+    @classmethod
+    def validate_jwt_access_token_expiry(cls, v: int) -> int:
+        """Validate if token expiry is valid"""
+        if not isinstance(v, int) or v < 1 or v > 999:
+            raise ValueError(
+                f"invalid access token expiry {color(v)}. Must be an integer between 1 and 999"
+            )
+        return v
+
+    @field_validator("jwt_refresh_token_expiry")
+    @classmethod
+    def validate_jwt_refresh_token_expiry(cls, v: int) -> int:
+        """Validate if token expiry is valid"""
+        if not isinstance(v, int) or v < 1 or v > 999:
+            raise ValueError(
+                f"invalid access token expiry {color(v)}. Must be an integer between 1 and 999"
             )
         return v
 

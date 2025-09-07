@@ -41,6 +41,26 @@ class InvalidRefreshToken(FastAPIExceptions):
     pass
 
 
+class InsufficientPermissions(FastAPIExceptions):
+    """User does not have the necessary permissions to perform this action"""
+    pass
+
+
+class UserEmailExists(FastAPIExceptions):
+    """The user email already exists in the database"""
+    pass
+
+
+class UserNotFound(FastAPIExceptions):
+    """The provided email or id does not exist in the database"""
+    pass
+
+
+class UserInvalidCredentials(FastAPIExceptions):
+    """The provided email/password combination does not not match any database entries"""
+    pass
+
+
 def create_exception_handler(status_code: int, detail: str) -> Callable[[Request, Exception], JSONResponse]:
     async def exception_handler(request: Request, exc: FastAPIExceptions):
         return JSONResponse(
@@ -98,5 +118,45 @@ def register_errors(app: FastAPI):
             detail={"message": "Refresh token is invalid or expired",
                     "error_code": "104_invalid_refresh_token",
                     "solution": "Provide a valid Refresh token"}
+        )
+    )
+
+    app.add_exception_handler(
+        InsufficientPermissions,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "User does not have the necessary permissions to perform this action",
+                    "error_code": "105_insufficient_permissions",
+                    "solution": "Contact your administrator for assistance"}
+        )
+    )
+
+    app.add_exception_handler(
+        UserEmailExists,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "User email already exists in the db",
+                    "error_code": "106_user_email_exists",
+                    "solution": "Use a different email address"}
+        )
+    )
+
+    app.add_exception_handler(
+        UserNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": "The email or id provided does not exist in the database",
+                    "error_code": "107_user_not_found",
+                    "solution": "Provide a valid email or id"}
+        )
+    )
+
+    app.add_exception_handler(
+        UserInvalidCredentials,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "The provided email/password combination does not not match any database entries",
+                    "error_code": "108_user_invalid_credentials",
+                    "solution": "Provide valid user credentials"}
         )
     )

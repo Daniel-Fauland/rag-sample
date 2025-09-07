@@ -7,6 +7,7 @@ from config import config, Settings
 from utils.logging import logger
 from utils.life_span import LifeSpanService
 from api.test.router import test_router
+from api.user.router import user_router
 from api.health.router import health_router
 
 
@@ -40,6 +41,7 @@ register_errors(app)
 
 # Include routers
 app.include_router(test_router, tags=["Test"])
+app.include_router(user_router, prefix="/user", tags=["User"])
 app.include_router(health_router, prefix="/health", tags=["Health"])
 
 
@@ -55,6 +57,7 @@ if __name__ == "__main__":
         f"Successfully read the config with the following fields: {list(Settings.model_fields.keys())}")
     logger.debug(f"IS_DOCKER = {config.is_docker}")
     logger.debug(f"IS_LOCAL = {config.is_local}")
+
     if config.is_docker:
         logger.info("Runnning using docker.")
         uvicorn.run("main:app", host="0.0.0.0", port=config.fastapi_port, workers=config.workers,

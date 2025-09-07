@@ -10,7 +10,7 @@ health_router = APIRouter()
 health_service = HealthService()
 
 
-@health_router.get("/", response_model=HealthCheckResponse)
+@health_router.get("", response_model=HealthCheckResponse)
 async def get_fastapi_version() -> dict:
     """Check the FastAPI version
 
@@ -25,7 +25,7 @@ async def get_fastapi_version() -> dict:
     return response
 
 
-@health_router.get("/db/", status_code=200)
+@health_router.get("/db", status_code=200)
 async def check_db_status(session: AsyncSession = Depends(get_session)) -> dict:
     result: dict = await health_service.check_db_health(session)
     if not result:
