@@ -22,6 +22,9 @@ Perfect for teams and developers who want to build production-grade FastAPI appl
     - [Local Postgres DB](#local-postgres-db)
     - [Online Postgres DB](#online-postgres-db)
   - [Database Migrations](#database-migrations)
+  - [Redis Database setup](#redis-database-setup)
+    - [Local Redis DB setup](#local-redis-db-setup)
+    - [Online Redis DB setup](#online-redis-db-setup)
   - [Run the Backend](#run-the-backend)
     - [Run Locally](#run-locally)
     - [Run with Docker](#run-with-docker)
@@ -36,6 +39,7 @@ This sample provides a FastAPI backend with the following features:
 - [x] Central [config.py](./backend/config.py) file for all env variables and settings.
 - [x] Immediate validation of variables inside of [config.py](./backend/config.py) using `pydantic-settings`.
 - [x] `Pydantic` models for api route request/response validation.
+- [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions).
 - [x] Global logging for the entire application. See [utils/logging.py](./backend/utils/logging.py).
 - [x] Life span object with health check at startup for FastAPI app instance. See [main.py](./backend/main.py).
 - [x] Middleware with execution timer for api routes. See [middleware.py](./backend/middleware.py).
@@ -49,7 +53,6 @@ This sample provides a FastAPI backend with the following features:
 - [x] User authorization using RBAC. See [auth/auth.py](./backend/auth/auth.py)
 - [x] Redis Database integration. See [databse/redis.py](./backend/database/redis.py)
 - [ ] Using Redis for TTL based token blocklist to handle JWT invalidation. See TBD
-- [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions). See `.env` file.
 
 > TODO: Integration test using test db <br/>
 > TODO: Add logout route <br/>
