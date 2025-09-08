@@ -40,21 +40,24 @@ This sample provides a FastAPI backend with the following features:
 - [x] Life span object with health check at startup for FastAPI app instance. See [main.py](./backend/main.py).
 - [x] Middleware with execution timer for api routes. See [middleware.py](./backend/middleware.py).
 - [x] Global API error setup using custom error classes. See [errors.py](./backend/errors.py).
-- [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions). See `.env` file.
 - [x] Colored terminal output support with `termcolor`. See [helper.py](./backend/utils/helper.py).
 - [x] Integration tests. See [tests/](./backend/tests/).
 - [x] Containerization of backend. See [Dockerfile](./backend/Dockerfile).
 - [x] Postgres database integration. See [database/](./backend/database/)
 - [x] Alembic database migrations. See [migrations/](./backend/migrations/)
-- [x] User authentication using JWT
-- [x] User authorization using RBAC
-- [ ] Redis Database integration for TTL based token blocklist to handle JWT invalidation
+- [x] User authentication using JWT. See [auth/jwt.py](./backend/auth/jwt.py)
+- [x] User authorization using RBAC. See [auth/auth.py](./backend/auth/auth.py)
+- [x] Redis Database integration. See [databse/redis.py](./backend/database/redis.py)
+- [ ] Using Redis for TTL based token blocklist to handle JWT invalidation. See TBD
+- [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions). See `.env` file.
 
 > TODO: Integration test using test db <br/>
 > TODO: Add logout route <br/>
 > TODO: Invalide Token after refresh/logout <br/>
 > TODO: Additional user routes: Delete user, update user <br/>
 > TODO: Roles routes: Get role(s), Update roles <br/>
+> TODO: Mock KeyVault env values <br />
+> TODO: Setup shell script for postgres, redis and ALL (pg, redis & be)
 
 ## Prerequisites
 
