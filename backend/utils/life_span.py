@@ -4,6 +4,7 @@ from config import config
 from utils.helper import color
 from utils.logging import logger
 from database.session import get_session_direct
+from database.redis import redis_manager
 from core.health.service import HealthService
 health_service = HealthService()
 
@@ -29,6 +30,22 @@ class LifeSpanService():
             # Always close the session to prevent resource leaks
             await db_session.close()
 
+        # Initialize Redis connection
+        await redis_manager.connect()
+        logger.debug("Redis connection pool initialized")
+
+        # Test Redis connection
+        try:
+            client = redis_manager.get_client()
+            await client.ping()
+            logger.debug("Redis health check passed")
+        except Exception as e:
+            logger.error(f"Redis health check failed: {e}")
+
     @staticmethod
     async def life_span_post_checks():
         logger.info(f"{await color("SYSTEM")}:   Server is stopping...")
+
+        # Close Redis connections
+        await redis_manager.disconnect()
+        logger.debug("Redis connection pool closed")

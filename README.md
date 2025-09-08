@@ -46,12 +46,15 @@ This sample provides a FastAPI backend with the following features:
 - [x] Containerization of backend. See [Dockerfile](./backend/Dockerfile).
 - [x] Postgres database integration. See [database/](./backend/database/)
 - [x] Alembic database migrations. See [migrations/](./backend/migrations/)
-- [ ] User authentication using JWT
-- [ ] User authorization using RBAC
+- [x] User authentication using JWT
+- [x] User authorization using RBAC
+- [ ] Redis Database integration for TTL based token blocklist to handle JWT invalidation
 
-> TODO: User authentication using JWT <br/>
-> TODO: User authorization <br/>
 > TODO: Integration test using test db <br/>
+> TODO: Add logout route <br/>
+> TODO: Invalide Token after refresh/logout <br/>
+> TODO: Additional user routes: Delete user, update user <br/>
+> TODO: Roles routes: Get role(s), Update roles <br/>
 
 ## Prerequisites
 
@@ -81,6 +84,7 @@ This sample provides a FastAPI backend with the following features:
   ```
 - You need a PostgresDB database. The database can be hosted locally or on the cloud.
 - After you set up your database make sure to run the alembic migrations to create the necessary tables and fill with inital data.
+- You need to set up a Redis database. The redis db can be hosted locally or on the cloud.
 
 ## Installation & Setup
 
@@ -255,11 +259,95 @@ alembic downgrade -2
 > | 1     | admin@example.com | Adminpassword |
 > | 2     | user@example.com  | Userpassword  |
 
+### Redis Database setup
+
+#### Local Redis DB setup
+
+If you already have a redis database running somewhere skip this step and go to [Online Redis DB setup](#online-redis-db-setup) setup instead. <br/>
+You can install redis locally on your machine or via Docker. Docker is straightforward and the process is the same for all machines therefore setup with docker will be shown:
+
+1. Make sure you have docker installed and the docker daemon is running.
+2. Define some settings for your redis db:
+
+   ```
+   export REDIS_VERSION="8.2"
+   export REDIS_CONTAINER="db-be-redis"
+   export REDIS_PASSWORD="mysecretpassword"
+   export REDIS_NETWORK_NAME="db-be-redis-network"
+   ```
+
+   **Important**: If you change these default values make sure to also adjust the `.env` file to ensure correct credentials for the backend application.
+
+3. Get the redis docker image. You can check the available versions [here](https://hub.docker.com/_/redis):
+
+   ```
+   docker pull redis:${REDIS_VERSION}
+   ```
+
+4. Create a docker network for your redis db:
+
+   ```
+   docker network create ${REDIS_NETWORK_NAME}
+   ```
+
+5. Start the redis instance:
+
+   ```
+   docker run --name ${REDIS_CONTAINER} --network ${REDIS_NETWORK_NAME} -p 6379:6379 -e REDIS_PASSWORD=${REDIS_PASSWORD} -d redis:${REDIS_VERSION} redis-server --requirepass ${REDIS_PASSWORD}
+   ```
+
+6. Validate successful setup by connecting to it:
+
+   ```
+   docker run -it --rm --network ${REDIS_NETWORK_NAME} redis:${REDIS_VERSION} redis-cli -h ${REDIS_CONTAINER} -a ${REDIS_PASSWORD}
+   ```
+
+   This will connect you to the Redis CLI. You can test if your redis db works properly by writing the following commands:
+
+   ```
+   ping
+   set test "Hello Redis"
+   get test
+   ```
+
+   (You can exit the redis terminal session by simply typing `exit`.)
+
+> [!Note]
+> You can stop and remove the running redis container with this command: `docker stop ${REDIS_CONTAINER} && docker rm ${REDIS_CONTAINER}` <br/>
+> The next time you want to run the database you only have to run step 1, 2 & 5. <br/> > **Note**: No persistent volume is used for Redis since this setup is intended for JWT token blacklisting, where data should be ephemeral and cleared when the container stops.
+
+> [!Tip]
+> You can now also connect to this database through any UI based database program like [RedisInsight](https://redis.com/redis-enterprise/redis-insight/) when providing the following credentials: <br/>
+> Host name/address: `localhost` <br/>
+> Port: `6379` <br/>
+> Password: The value of: `${REDIS_PASSWORD}`
+
+#### Online Redis DB setup
+
+If you use a cloud hosted redis db you only need to update the following credentials in the `.env` file.
+
+```
+# --- Redis Settings ---
+REDIS_HOST="your-redis-db-domain.com"
+REDIS_PORT="your-redis-port"
+REDIS_PASSWORD="your-redis-password"
+REDIS_SSL="True"  # Probably True in most cases
+```
+
+> [!Note]
+> Make sure to check any potential ip/firewall restrictions that might block your connection.
+
 ### Run the Backend
 
 #### Run Locally
 
-Make sure you have fulfilled all the prerequisites before proceeding. <br/>
+Make sure you have fulfilled all the prerequisites before proceeding. These are: <br/>
+
+1. Setting up a postgres database
+2. Creating and configuring the `.env` file
+3. Running the database migrations
+4. Setting up a redis database
+
 In order to run a python project using `uv` simply run the following command within the `backend/` directory:
 
 ```
@@ -336,17 +424,21 @@ Here is an overview about the environment variables in your `.env` file:
 | Environment Settings | BACKEND_VERSION     | 0.0.1                              | The version of the fastapi backend                                                  | Must be in format x.y.z (e.g. 1.2.3)                                              | NO        |
 | Environment Settings | IS_LOCAL            | False                              | Whether the backend runs on a local machine or somewhere else (e.g. Cloud instance) |                                                                                   | NO        |
 | Environment Settings | IS_DOCKER           | True                               | Whether the backend runs within a docker container                                  |                                                                                   | NO        |
-| Database Settings    | DB_HOST             | -                                  | The host name of your SQL database                                                  |                                                                                   | YES       |
-| Database Settings    | DB_PORT             | -                                  | The port on which your SQL database runs                                            | Must be an integer between 1 and 65535                                            | YES       |
-| Database Settings    | DB_NAME             | -                                  | The name of your database that you want to connect to                               |                                                                                   | YES       |
-| Database Settings    | DB_PASSWD           | -                                  | The password of your SQL database                                                   |                                                                                   | YES       |
-| Database Settings    | DB_USER             | -                                  | The user that the application will use when interacting with the db                 |                                                                                   | YES       |
+| Database Settings    | DB_HOST             | -                                  | The host name of your SQL database                                                  |                                                                                   | **YES**   |
+| Database Settings    | DB_PORT             | -                                  | The port on which your SQL database runs                                            | Must be an integer between 1 and 65535                                            | **YES**   |
+| Database Settings    | DB_NAME             | -                                  | The name of your database that you want to connect to                               |                                                                                   | **YES**   |
+| Database Settings    | DB_PASSWD           | -                                  | The password of your SQL database                                                   |                                                                                   | **YES**   |
+| Database Settings    | DB_USER             | -                                  | The user that the application will use when interacting with the db                 |                                                                                   | **YES**   |
 | Database Settings    | DB_SSL              | True                               | Whether the connection between app and db should be established using SSL           |                                                                                   | NO        |
 | Database Settings    | DB_ECHO             | True                               | Whether the backend should log its internal operations in the terminal              |                                                                                   | NO        |
 | Database Settings    | DB_POOL_SIZE        | 20                                 | Number of database connections to maintain in the pool                              | Core concurrency limit for database operations                                    | NO        |
 | Database Settings    | DB_MAX_OVERFLOW     | 30                                 | Additional connections allowed when pool is full                                    | Burst capacity for handling traffic spikes                                        | NO        |
 | Database Settings    | DB_POOL_TIMEOUT     | 15                                 | Timeout in seconds waiting for available connection                                 | Prevents application from hanging on connection requests                          | NO        |
 | Database Settings    | DB_POOL_RECYCLE     | 3600                               | Recycle connections after this many seconds                                         | Prevents stale connections in long-running applications                           | NO        |
+| Redis Settings       | REDIS_HOST          | -                                  | The host name of your Redis database                                                |                                                                                   | **YES**   |
+| Redis Settings       | REDIS_PORT          | -                                  | The port on which your Redis database runs                                          | Must be an integer between 1 and 65535                                            | **YES**   |
+| Redis Settings       | REDIS_PASSWORD      | -                                  | The password of your Redis database                                                 |                                                                                   | **YES**   |
+| Redis Settings       | REDIS_POOL_SIZE     | 20                                 | Number of database connections to maintain in the pool                              |                                                                                   | NO        |
 | Performance Settings | THREAD_POOL         | 80                                 | The amount of threads that can be open concurrently for each worker                 | [More info](https://www.starlette.io/threadpool/)                                 | NO        |
 | Performance Settings | WORKERS             | 4                                  | The amount of workers the uvicorn server uses                                       | Ideally this number is ~amount of CPU threads (not cores) for optimal scalability | NO        |
 

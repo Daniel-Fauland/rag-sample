@@ -81,7 +81,6 @@ class Settings(BaseSettings):
         description="Whether the backend should log its internal operations in the terminal"
     )
 
-    # Database connection pool settings
     db_pool_size: int = Field(
         default=20,
         description="Number of database connections to maintain in the pool"
@@ -100,6 +99,28 @@ class Settings(BaseSettings):
     db_pool_recycle: int = Field(
         default=3600,
         description="Recycle connections after this many seconds"
+    )
+
+    # --- Redis Settings ---
+    redis_host: str = Field(
+        description="The host name of your redis database"
+    )
+    redis_port: int = Field(
+        description="The port on which your redis database runs"
+    )
+
+    redis_password: str = Field(
+        description="The password of your redis database"
+    )
+
+    redis_ssl: bool = Field(
+        default=True,
+        description="hWheter the connection between app and db sould be established using ssl"
+    )
+
+    redis_pool_size: int = Field(
+        default=20,
+        description="Number of database connections to maintain in the pool"
     )
 
     @cached_property
@@ -166,6 +187,17 @@ class Settings(BaseSettings):
     @field_validator("db_port")
     @classmethod
     def validate_db_port(cls, v: int) -> int:
+        """Validate database port is a valid port number."""
+        if not isinstance(v, int) or v < 1 or v > 65535:
+            raise ValueError(
+                f"invalid port number {color(v)}. Must be an integer between 1 and 65535"
+            )
+        return v
+
+    # - Validation of Redis Settings -
+    @field_validator("redis_port")
+    @classmethod
+    def validate_redis_port(cls, v: int) -> int:
         """Validate database port is a valid port number."""
         if not isinstance(v, int) or v < 1 or v > 65535:
             raise ValueError(
