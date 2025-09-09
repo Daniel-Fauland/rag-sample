@@ -24,6 +24,11 @@ class Settings(BaseSettings):
         description="Logging level for the application"
     )
 
+    fastapi_project_name: str = Field(
+        default="FastAPI",
+        description="The Project of you application used in the Swagger title"
+    )
+
     fastapi_welcome_msg: str = Field(
         default="Access the swagger docs at '/docs'",
         description="The default message shown when opening the fastapi url in the browser"

@@ -7,6 +7,7 @@ from errors import InvalidAccessToken, InvalidRefreshToken, InsufficientPermissi
 from core.user.service import UserService
 from models.user.response import UserModel
 from database.session import get_session
+from database.redis import redis_manager
 
 jwt_handler = JWTHandler()
 user_service = UserService()
@@ -28,6 +29,14 @@ class TokenBearer(HTTPBearer):
         creds = await super().__call__(request)
         token = creds.credentials
         token_data = await jwt_handler.decode_token(token)
+
+        # Check if token in Redis blocklist
+        redis_client = redis_manager.get_client()
+        if await jwt_handler.jwt_is_blacklisted(token_data=token_data, redis_client=redis_client):
+            if token_data.get('refresh'):
+                raise InvalidRefreshToken
+            else:
+                raise InvalidAccessToken
 
         self.verify_token_data(token_data)
         return token_data

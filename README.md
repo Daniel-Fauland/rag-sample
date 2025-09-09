@@ -52,7 +52,8 @@ This sample provides a FastAPI backend with the following features:
 - [x] User authentication using JWT. See [auth/jwt.py](./backend/auth/jwt.py)
 - [x] User authorization using RBAC. See [auth/auth.py](./backend/auth/auth.py)
 - [x] Redis Database integration. See [databse/redis.py](./backend/database/redis.py)
-- [ ] Using Redis for TTL based token blocklist to handle JWT invalidation. See TBD
+- [x] Using Redis for TTL based token blacklisting to handle JWT invalidation. See [auth/auth.py](./backend/auth/auth.py)
+- [x] IP based rate limiting on individual routes. See [api/health/router.py](./backend/api/health/router.py)
 
 > TODO: Integration test using test db <br/>
 > TODO: Add logout route <br/>
@@ -320,7 +321,8 @@ You can install redis locally on your machine or via Docker. Docker is straightf
 
 > [!Note]
 > You can stop and remove the running redis container with this command: `docker stop ${REDIS_CONTAINER} && docker rm ${REDIS_CONTAINER}` <br/>
-> The next time you want to run the database you only have to run step 1, 2 & 5. <br/> > **Note**: No persistent volume is used for Redis since this setup is intended for JWT token blacklisting, where data should be ephemeral and cleared when the container stops.
+> The next time you want to run the database you only have to run step 1, 2 & 5. <br/>
+> Note: No persistent volume is used for Redis since this setup is intended for JWT token blacklisting, where data should be ephemeral and cleared when the container stops.
 
 > [!Tip]
 > You can now also connect to this database through any UI based database program like [RedisInsight](https://redis.com/redis-enterprise/redis-insight/) when providing the following credentials: <br/>
@@ -337,7 +339,6 @@ If you use a cloud hosted redis db you only need to update the following credent
 REDIS_HOST="your-redis-db-domain.com"
 REDIS_PORT="your-redis-port"
 REDIS_PASSWORD="your-redis-password"
-REDIS_SSL="True"  # Probably True in most cases
 ```
 
 > [!Note]

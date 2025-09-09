@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -39,3 +40,8 @@ class SignupRequest(UserCommonModel):
 
 class LoginRequest(UserCommonModel):
     password: str = Field(..., examples=["Mysecretpassword99"])
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = Field(
+        None, description="The refresh token to invalidate", examples=["eyJhb..."])

@@ -3,6 +3,7 @@ import jwt
 import uuid_utils as uid
 from config import config
 from utils.logging import logger
+from database.redis import redis_manager
 
 
 class JWTHandler():
@@ -38,12 +39,36 @@ class JWTHandler():
             logger.warning(f"Could not decode the JWT token: {e}")
             return None
 
+    @staticmethod
+    async def add_jwt_to_blacklist(token_data: dict, redis_client=None) -> None:
+        """Add a decoded jwt token to a blacklist in redis using its 'jti' identifier"""
+        if redis_client is None:
+            redis_client = redis_manager.get_client()
+
+        # Calculate TTL from expiration time
+        exp_timestamp = token_data['exp']
+        current_time = datetime.now(timezone.utc).timestamp()
+        ttl_seconds = int(exp_timestamp - current_time)
+
+        await redis_client.setex(f"blacklist:{token_data['jti']}", ttl_seconds, "1")
+
+    @staticmethod
+    async def jwt_is_blacklisted(token_data: dict, redis_client=None) -> bool:
+        """Check if the given decoded jwt token is currently part of the blacklist in redis"""
+        if redis_client is None:
+            redis_client = redis_manager.get_client()
+
+        return await redis_client.exists(f"blacklist:{token_data['jti']}")
+
 
 # Example usage and migration helper
 if __name__ == "__main__":
     import asyncio
 
     async def main():
+        # Initialize Redis connection for testing
+        await redis_manager.connect()
+
         jwt_handler = JWTHandler()
 
         # Create a valid access token
@@ -67,8 +92,27 @@ if __name__ == "__main__":
         print(f"Payload data (valid): {payload}\n")
 
         # Decode expired access token
-        payload = await jwt_handler.decode_token(jwt_token_expired)
-        print(f"Payload data (expired): {payload}")
+        payload_expired = await jwt_handler.decode_token(jwt_token_expired)
+        print(f"Payload data (expired): {payload_expired}")
+
+        # Get Redis client for testing
+        redis_client = redis_manager.get_client()
+
+        # Check if the valid access token is currently part of the redis blacklist
+        is_blacklisted = await jwt_handler.jwt_is_blacklisted(payload, redis_client)
+        print(
+            f"Is the token currently blacklisted (Should be NO): {'YES' if is_blacklisted else 'NO'}")
+
+        # Add the valid access token to the redis blacklist
+        await jwt_handler.add_jwt_to_blacklist(payload, redis_client)
+
+        # Check again if the valid access token is currently part of the redis blacklist
+        is_blacklisted = await jwt_handler.jwt_is_blacklisted(payload, redis_client)
+        print(
+            f"Is the token currently blacklisted (Should be YES): {'YES' if is_blacklisted else 'NO'}")
+
+        # Clean up
+        await redis_manager.disconnect()
 
     # Run the async main function
     asyncio.run(main())
