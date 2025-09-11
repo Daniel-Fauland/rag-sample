@@ -17,11 +17,15 @@ jwt_handler = JWTHandler()
 
 
 class UserService:
-    async def _get_user(self, session: AsyncSession, where_clause, include_roles: bool = False) -> User | None:
+    async def _get_user(self, session: AsyncSession, where_clause, include_roles: bool = False, include_permissions: bool = False) -> User | None:
         """Helper to get a user by a given where clause"""
         options = []
         if include_roles:
             options.append(selectinload(User.roles))
+            if include_permissions:
+                # Also load permissions for each role
+                options.append(selectinload(
+                    User.roles).selectinload(Role.permissions))
         statement = select(User)
         if options:
             statement = statement.options(*options)
@@ -30,31 +34,33 @@ class UserService:
         user = result.first()
         return user
 
-    async def get_user_by_id(self, id: uuid.UUID, session: AsyncSession, include_roles: bool = False) -> User | None:
+    async def get_user_by_id(self, id: uuid.UUID, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False) -> User | None:
         """Get a user by their unique identifier.
 
         Args:
             id: The user's UUID
             session: Database session
             include_roles: Whether to eagerly load user roles
+            include_permissions: Whether to eagerly load permissions for each role
 
         Returns:
             User object if found, None otherwise
         """
-        return await self._get_user(session=session, where_clause=User.id == id, include_roles=include_roles)
+        return await self._get_user(session=session, where_clause=User.id == id, include_roles=include_roles, include_permissions=include_permissions)
 
-    async def get_user_by_email(self, email: str, session: AsyncSession, include_roles: bool = False) -> User | None:
+    async def get_user_by_email(self, email: str, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False) -> User | None:
         """Get a user by their email.
 
         Args:
             email: The user's email
             session: Database session
             include_roles: Whether to eagerly load user roles
+            include_permissions: Whether to eagerly load permissions for each role
 
         Returns:
             User object if found, None otherwise
         """
-        return await self._get_user(session=session, where_clause=User.email == email, include_roles=include_roles)
+        return await self._get_user(session=session, where_clause=User.email == email, include_roles=include_roles, include_permissions=include_permissions)
 
     async def user_exists(self, email: str, session: AsyncSession) -> bool:
         user = await self.get_user_by_email(email, session)

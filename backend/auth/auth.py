@@ -32,7 +32,7 @@ class TokenBearer(HTTPBearer):
 
         # Check if token in Redis blocklist
         redis_client = redis_manager.get_client()
-        if await jwt_handler.jwt_is_blacklisted(token_data=token_data, redis_client=redis_client):
+        if token_data is not None and await jwt_handler.jwt_is_blacklisted(token_data=token_data, redis_client=redis_client):
             if token_data.get('refresh'):
                 raise InvalidRefreshToken
             else:
@@ -59,7 +59,7 @@ class RefreshTokenBearer(TokenBearer):
 
 async def get_current_user(token_details: dict = Depends(AccessTokenBearer()), session: AsyncSession = Depends(get_session)):
     id = token_details['user']['id']
-    user: UserModel = await user_service.get_user_by_id(id=id, session=session, include_roles=True)
+    user: UserModel = await user_service.get_user_by_id(id=id, session=session, include_roles=True, include_permissions=True)
     return user
 
 

@@ -69,7 +69,7 @@ def upgrade() -> None:
             )
         ).fetchall()
 
-        # Get user-specific permissions (update:user:me, delete:user:me)
+        # Get user-specific permissions (write:user:me, update:user:me, delete:user:me)
         user_me_permissions = op.get_bind().execute(
             sa.select(permissions_table.c.id).where(
                 sa.and_(

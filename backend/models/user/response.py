@@ -20,12 +20,35 @@ class UserModelBase(BaseModel):
                                   description="A timestamp when the user was last modified")
 
 
+class PermissionModelBase(BaseModel):
+    id: int = Field(..., description="The permission id", examples=[3])
+    type: str = Field(..., description="The type of operation. Can either be read, write, update or delete",
+                      examples=["update"])
+    resource: str = Field(..., description="The referenced resource", examples=[
+                          "user"])
+    context: str = Field(..., description="The context of the action", examples=[
+                         "me"])
+    is_active: bool = Field(
+        ..., description="Whether the permission can be currently used in the application", examples=[True])
+
+
+class PermissionModel(PermissionModelBase):
+    description: str = Field(..., description="The description of the permission", examples=[
+                             "Update own user"])
+    created_at: datetime = Field(...,
+                                 description="When the permission was initally created")
+
+
 class RoleModelBase(BaseModel):
     id: int = Field(..., description="The role id", examples=[2])
     name: str = Field(..., description="The name of the role",
                       examples=["user"])
     is_active: bool = Field(
         ..., description="Whether the role can be currently used in the application", examples=[True])
+
+
+class RoleModelPermissionBase(RoleModelBase):
+    permissions: list["PermissionModelBase"]
 
 
 class RoleModel(RoleModelBase):
@@ -36,7 +59,7 @@ class RoleModel(RoleModelBase):
 
 
 class UserModel(UserModelBase):
-    roles: list["RoleModelBase"]
+    roles: list["RoleModelPermissionBase"]
 
 
 class SignupResponse(BaseModel):

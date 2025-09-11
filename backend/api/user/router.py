@@ -67,7 +67,7 @@ async def login(request: Request, user_credentials: LoginRequest, session: Async
     """
     email: str = user_credentials.email
     password: str = user_credentials.password
-    user: UserModel | None = await service.get_user_by_email(email=email, session=session, include_roles=True)
+    user: UserModel | None = await service.get_user_by_email(email=email, session=session, include_roles=True, include_permissions=True)
 
     if not user:
         raise UserInvalidCredentials
@@ -108,7 +108,7 @@ async def get_new_refresh_token(token_data: dict = Depends(refresh_token_bearer)
         SigninResponse: New access and refresh tokens with success message <br />
     """
     user_id = token_data["user"]["id"]
-    user: UserModel | None = await service.get_user_by_id(id=user_id, session=session, include_roles=True)
+    user: UserModel | None = await service.get_user_by_id(id=user_id, session=session, include_roles=True, include_permissions=True)
 
     if not user:
         raise UserNotFound
@@ -149,7 +149,7 @@ async def logout(
         SignoutResponse: A status message about the signout <br />
     """
     user_id = token_data_access["user"]["id"]
-    user: UserModel | None = await service.get_user_by_id(id=user_id, session=session, include_roles=True)
+    user: UserModel | None = await service.get_user_by_id(id=user_id, session=session, include_roles=True, include_permissions=True)
 
     if not user:
         raise UserNotFound
