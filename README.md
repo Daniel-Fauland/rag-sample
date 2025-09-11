@@ -53,13 +53,12 @@ This sample provides a FastAPI backend with the following features:
 - [x] User authorization using RBAC. See [auth/auth.py](./backend/auth/auth.py)
 - [x] Redis Database integration. See [databse/redis.py](./backend/database/redis.py)
 - [x] Using Redis for TTL based token blacklisting to handle JWT invalidation. See [auth/auth.py](./backend/auth/auth.py)
-- [x] IP based rate limiting on individual routes. See [api/health/router.py](./backend/api/health/router.py)
+- [x] IP based rate limiting on individual api routes. See [api/health/router.py](./backend/api/health/router.py)
 
 > TODO: Integration test using test db <br/>
-> TODO: Add logout route <br/>
-> TODO: Invalide Token after refresh/logout <br/>
+> TODO: Extend RBAC by adding Permissions
 > TODO: Additional user routes: Delete user, update user <br/>
-> TODO: Roles routes: Get role(s), Update roles <br/>
+> TODO: Additional roles routes: Get role(s), Update roles <br/>
 > TODO: Mock KeyVault env values <br />
 > TODO: Setup shell script for postgres, redis and ALL (pg, redis & be)
 
@@ -421,33 +420,34 @@ Keep in mind that every test file within the [tests](./backend/tests/) directory
 
 ## Env Variables Overview
 
-Here is an overview about the environment variables in your `.env` file:
+Here is a complete overview about the environment variables in the `.env` file:
 
-| Category             | ENV Variable        | Default Value                      | Description                                                                         | Additional Information                                                            | Mandatory |
-| -------------------- | ------------------- | ---------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------- |
-| Basic Settings       | LOGGING_LEVEL       | INFO                               | The Logging level for the backend application                                       | Must be either DEBUG, INFO, WARNING, ERROR, CRITICAL                              | NO        |
-| Basic Settings       | FASTAPI_WELCOME_MSG | Access the swagger docs at '/docs' | The default message shown when opening the fastapi url in the browser               |                                                                                   | NO        |
-| Basic Settings       | FASTAPI_PORT        | 8000                               | The port at which the fastapi (uvicorn) backend runs                                |                                                                                   | NO        |
-| Environment Settings | BACKEND_VERSION     | 0.0.1                              | The version of the fastapi backend                                                  | Must be in format x.y.z (e.g. 1.2.3)                                              | NO        |
-| Environment Settings | IS_LOCAL            | False                              | Whether the backend runs on a local machine or somewhere else (e.g. Cloud instance) |                                                                                   | NO        |
-| Environment Settings | IS_DOCKER           | True                               | Whether the backend runs within a docker container                                  |                                                                                   | NO        |
-| Database Settings    | DB_HOST             | -                                  | The host name of your SQL database                                                  |                                                                                   | **YES**   |
-| Database Settings    | DB_PORT             | -                                  | The port on which your SQL database runs                                            | Must be an integer between 1 and 65535                                            | **YES**   |
-| Database Settings    | DB_NAME             | -                                  | The name of your database that you want to connect to                               |                                                                                   | **YES**   |
-| Database Settings    | DB_PASSWD           | -                                  | The password of your SQL database                                                   |                                                                                   | **YES**   |
-| Database Settings    | DB_USER             | -                                  | The user that the application will use when interacting with the db                 |                                                                                   | **YES**   |
-| Database Settings    | DB_SSL              | True                               | Whether the connection between app and db should be established using SSL           |                                                                                   | NO        |
-| Database Settings    | DB_ECHO             | True                               | Whether the backend should log its internal operations in the terminal              |                                                                                   | NO        |
-| Database Settings    | DB_POOL_SIZE        | 20                                 | Number of database connections to maintain in the pool                              | Core concurrency limit for database operations                                    | NO        |
-| Database Settings    | DB_MAX_OVERFLOW     | 30                                 | Additional connections allowed when pool is full                                    | Burst capacity for handling traffic spikes                                        | NO        |
-| Database Settings    | DB_POOL_TIMEOUT     | 15                                 | Timeout in seconds waiting for available connection                                 | Prevents application from hanging on connection requests                          | NO        |
-| Database Settings    | DB_POOL_RECYCLE     | 3600                               | Recycle connections after this many seconds                                         | Prevents stale connections in long-running applications                           | NO        |
-| Redis Settings       | REDIS_HOST          | -                                  | The host name of your Redis database                                                |                                                                                   | **YES**   |
-| Redis Settings       | REDIS_PORT          | -                                  | The port on which your Redis database runs                                          | Must be an integer between 1 and 65535                                            | **YES**   |
-| Redis Settings       | REDIS_PASSWORD      | -                                  | The password of your Redis database                                                 |                                                                                   | **YES**   |
-| Redis Settings       | REDIS_POOL_SIZE     | 20                                 | Number of database connections to maintain in the pool                              |                                                                                   | NO        |
-| Performance Settings | THREAD_POOL         | 80                                 | The amount of threads that can be open concurrently for each worker                 | [More info](https://www.starlette.io/threadpool/)                                 | NO        |
-| Performance Settings | WORKERS             | 4                                  | The amount of workers the uvicorn server uses                                       | Ideally this number is ~amount of CPU threads (not cores) for optimal scalability | NO        |
+| Category             | ENV Variable         | Default Value                      | Description                                                                         | Additional Information                                                            | Mandatory |
+| -------------------- | -------------------- | ---------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------- |
+| Basic Settings       | LOGGING_LEVEL        | INFO                               | The Logging level for the backend application                                       | Must be either DEBUG, INFO, WARNING, ERROR, CRITICAL                              | NO        |
+| Basic Settings       | FASTAPI_PROJECT_NAME | FastAPI                            | The Project of you application used in the Swagger title                            |                                                                                   | NO        |
+| Basic Settings       | FASTAPI_WELCOME_MSG  | Access the swagger docs at '/docs' | The default message shown when opening the fastapi url in the browser               |                                                                                   | NO        |
+| Basic Settings       | FASTAPI_PORT         | 8000                               | The port at which the fastapi (uvicorn) backend runs                                |                                                                                   | NO        |
+| Environment Settings | BACKEND_VERSION      | 0.0.1                              | The version of the fastapi backend                                                  | Must be in format x.y.z (e.g. 1.2.3)                                              | NO        |
+| Environment Settings | IS_LOCAL             | False                              | Whether the backend runs on a local machine or somewhere else (e.g. Cloud instance) |                                                                                   | NO        |
+| Environment Settings | IS_DOCKER            | True                               | Whether the backend runs within a docker container                                  |                                                                                   | NO        |
+| Database Settings    | DB_HOST              | -                                  | The host name of your SQL database                                                  |                                                                                   | **YES**   |
+| Database Settings    | DB_PORT              | -                                  | The port on which your SQL database runs                                            | Must be an integer between 1 and 65535                                            | **YES**   |
+| Database Settings    | DB_NAME              | -                                  | The name of your database that you want to connect to                               |                                                                                   | **YES**   |
+| Database Settings    | DB_PASSWD            | -                                  | The password of your SQL database                                                   |                                                                                   | **YES**   |
+| Database Settings    | DB_USER              | -                                  | The user that the application will use when interacting with the db                 |                                                                                   | **YES**   |
+| Database Settings    | DB_SSL               | True                               | Whether the connection between app and db should be established using SSL           |                                                                                   | NO        |
+| Database Settings    | DB_ECHO              | True                               | Whether the backend should log its internal operations in the terminal              |                                                                                   | NO        |
+| Database Settings    | DB_POOL_SIZE         | 20                                 | Number of database connections to maintain in the pool                              | Core concurrency limit for database operations                                    | NO        |
+| Database Settings    | DB_MAX_OVERFLOW      | 30                                 | Additional connections allowed when pool is full                                    | Burst capacity for handling traffic spikes                                        | NO        |
+| Database Settings    | DB_POOL_TIMEOUT      | 15                                 | Timeout in seconds waiting for available connection                                 | Prevents application from hanging on connection requests                          | NO        |
+| Database Settings    | DB_POOL_RECYCLE      | 3600                               | Recycle connections after this many seconds                                         | Prevents stale connections in long-running applications                           | NO        |
+| Redis Settings       | REDIS_HOST           | -                                  | The host name of your Redis database                                                |                                                                                   | **YES**   |
+| Redis Settings       | REDIS_PORT           | -                                  | The port on which your Redis database runs                                          | Must be an integer between 1 and 65535                                            | **YES**   |
+| Redis Settings       | REDIS_PASSWORD       | -                                  | The password of your Redis database                                                 |                                                                                   | **YES**   |
+| Redis Settings       | REDIS_POOL_SIZE      | 20                                 | Number of database connections to maintain in the pool                              |                                                                                   | NO        |
+| Performance Settings | THREAD_POOL          | 80                                 | The amount of threads that can be open concurrently for each worker                 | [More info](https://www.starlette.io/threadpool/)                                 | NO        |
+| Performance Settings | WORKERS              | 4                                  | The amount of workers the uvicorn server uses                                       | Ideally this number is ~amount of CPU threads (not cores) for optimal scalability | NO        |
 
 > [!Note]
-> Variables are only mandatory if **no default value** exists.
+> Variables are only mandatory if **no default value** exists. They must be set in order to start the backend.
