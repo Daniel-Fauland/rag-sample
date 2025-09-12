@@ -63,6 +63,7 @@ class UserService:
         return await self._get_user(session=session, where_clause=User.email == email, include_roles=include_roles, include_permissions=include_permissions)
 
     async def user_exists(self, email: str, session: AsyncSession) -> bool:
+        """Check if a user already exists in the database"""
         user = await self.get_user_by_email(email, session)
         return True if user is not None else False
 
@@ -75,7 +76,15 @@ class UserService:
             raise ValueError(f"Role '{role}' does not exist in database")
         return role
 
-    async def create_user(self, user_data: SignupRequest, session: AsyncSession):
+    async def create_user(self, user_data: SignupRequest, session: AsyncSession) -> User:
+        """Create a new user in database including the user-role relationship
+
+        Args:
+            user_data (SignupRequest): The data of the new user to create
+
+        Returns:
+            User: The newly created user
+        """
         user_data_dict = user_data.model_dump()
         new_user = User(**user_data_dict)
         new_user.password_hash = await user_helper.hash_password(user_data_dict["password"])
@@ -83,8 +92,8 @@ class UserService:
         session.add(new_user)
         await session.flush()  # Flush to get the user ID
 
-        # Get the default 'user' role
-        default_role = await self.get_user_role("user", session)
+        # Get the default user role for new users
+        default_role = await self.get_user_role(config.default_user_role, session)
 
         # Create the user-role relationship
         user_role = UserRole(user_id=new_user.id, role_id=default_role.id)

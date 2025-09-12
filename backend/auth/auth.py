@@ -6,6 +6,7 @@ from auth.jwt import JWTHandler
 from errors import InvalidAccessToken, InvalidRefreshToken, InsufficientPermissions
 from core.user.service import UserService
 from models.user.response import UserModel
+from models.auth import Permission
 from database.session import get_session
 from database.redis import redis_manager
 
@@ -64,6 +65,8 @@ async def get_current_user(token_details: dict = Depends(AccessTokenBearer()), s
 
 
 class RoleChecker():
+    """Check for specific roles. Raise 403 if user does not have any of the allowed roles."""
+
     def __init__(self, allowed_roles: list[str]) -> None:
         # Always allow 'admin' role
         self.allowed_roles = list(set(allowed_roles + ['admin']))
@@ -71,4 +74,40 @@ class RoleChecker():
     def __call__(self, current_user: UserModel = Depends(get_current_user)) -> bool:
         if not any(role.name in self.allowed_roles for role in current_user.roles if role.is_active):
             raise InsufficientPermissions
+        return True
+
+
+class PermissionChecker():
+    """Check for specific permissions. Raise 403 if user does not have all required permissions."""
+
+    def __init__(self, required_permissions: list[Permission]):
+        self.required_permissions = required_permissions
+
+    def _get_user_permissions(self, current_user: UserModel) -> set:
+        """Extract user permissions as a set for efficient lookup"""
+        user_permissions = set()
+        for role in current_user.roles:
+            if role.is_active:
+                for permission in role.permissions:
+                    if permission.is_active:  # Only include active permissions
+                        user_permissions.add(
+                            (permission.type, permission.resource, permission.context)
+                        )
+        return user_permissions
+
+    def __call__(self, current_user: UserModel = Depends(get_current_user)) -> bool:
+        # Allow every action for admins
+        if any(role.name == "admin" and role.is_active for role in current_user.roles):
+            return True
+
+        # Get user permissions
+        user_permissions = self._get_user_permissions(current_user)
+
+        # Check if user has all required permissions
+        for required_perm in self.required_permissions:
+            perm_tuple = (required_perm.type.value,
+                          required_perm.resource.value, required_perm.context.value)
+            if perm_tuple not in user_permissions:
+                raise InsufficientPermissions(
+                    f"{required_perm.type.value}:{required_perm.resource.value}:{required_perm.context.value}")
         return True

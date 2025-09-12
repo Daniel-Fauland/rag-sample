@@ -26,7 +26,11 @@ class HealthCheckDBError(FastAPIExceptions):
 class XValueError(FastAPIExceptions):
     """One or more wrong provided arguments led to a ValueError
     """
-    pass
+
+    def __init__(self, message: str = None):
+        if message is not None:
+            self.message = f"{message}"
+        super().__init__(self.message)
 
 
 class InvalidAccessToken(FastAPIExceptions):
@@ -42,8 +46,13 @@ class InvalidRefreshToken(FastAPIExceptions):
 
 
 class InsufficientPermissions(FastAPIExceptions):
-    """User does not have the necessary permissions to perform this action"""
-    pass
+    """User does not have the necessary permissions to perform this action
+    """
+
+    def __init__(self, message: str = None):
+        if message is not None:
+            self.message = f"Missing permission: {message}"
+        super().__init__(self.message)
 
 
 class UserEmailExists(FastAPIExceptions):
@@ -68,8 +77,19 @@ class UserNotVerified(FastAPIExceptions):
 
 def create_exception_handler(status_code: int, detail: str) -> Callable[[Request, Exception], JSONResponse]:
     async def exception_handler(request: Request, exc: FastAPIExceptions):
+        # Use dynamic message if available, otherwise use the static detail
+        if hasattr(exc, 'message') and exc.message:
+            # For exceptions with dynamic messages, update the detail
+            if isinstance(detail, dict) and 'message' in detail:
+                content = detail.copy()
+                content['message'] = exc.message
+            else:
+                content = detail
+        else:
+            content = detail
+
         return JSONResponse(
-            content=detail,
+            content=content,
             status_code=status_code
         )
     return exception_handler
@@ -141,7 +161,7 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": "User email already exists in the db",
-                    "error_code": "106_user_email_exists",
+                    "error_code": "107_user_email_exists",
                     "solution": "Use a different email address"}
         )
     )
@@ -151,7 +171,7 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"message": "The email or id provided does not exist in the database",
-                    "error_code": "107_user_not_found",
+                    "error_code": "108_user_not_found",
                     "solution": "Provide a valid email or id"}
         )
     )
@@ -161,7 +181,7 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": "The provided email/password combination does not not match any database entries",
-                    "error_code": "108_user_invalid_credentials",
+                    "error_code": "109_user_invalid_credentials",
                     "solution": "Provide valid user credentials"}
         )
     )
@@ -171,7 +191,7 @@ def register_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": "The user is not verified",
-                    "error_code": "109_user_unverified",
+                    "error_code": "110_user_unverified",
                     "solution": "Contact your administrator for assistance"}
         )
     )

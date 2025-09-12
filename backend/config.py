@@ -55,6 +55,12 @@ class Settings(BaseSettings):
         description="Wheter the backend runs within a docker container"
     )
 
+    # --- User Settings ---
+    default_user_role: str = Field(
+        default="user",
+        description="The default role that is assigned at user creation. Can only assign roles that exist in the db."
+    )
+
     # --- Database Settings ---
     db_host: str = Field(
         description="The host name of your sql database"
