@@ -41,7 +41,7 @@ This sample provides a FastAPI backend with the following features:
 - [x] `Pydantic` models for api route request/response validation.
 - [x] Performance optimization (Customizable workers / customizable thread pool / faster event_loop with uvicorn[standard] / offloading of synchronous functions).
 - [x] Global logging for the entire application. See [utils/logging.py](./backend/utils/logging.py).
-- [x] Life span object with health check at startup for FastAPI app instance. See [main.py](./backend/main.py).
+- [x] Life span object with health checks at startup & clean-up at shutdown for FastAPI app instance. See [main.py](./backend/main.py).
 - [x] Middleware with execution timer for api routes. See [middleware.py](./backend/middleware.py).
 - [x] Global API error setup using custom error classes. See [errors.py](./backend/errors.py).
 - [x] Colored terminal output support with `termcolor`. See [helper.py](./backend/utils/helper.py).
@@ -56,10 +56,10 @@ This sample provides a FastAPI backend with the following features:
 - [x] IP based rate limiting on individual api routes. See [api/health/router.py](./backend/api/health/router.py)
 
 > TODO: Integration test using test db <br/>
-> TODO: Additional user routes: Delete user, update user <br/>
-> TODO: Additional roles routes: Get role(s), Update roles <br/>
+> TODO: Additional user routes: Get user(s), update user, delete user, <br/>
+> TODO: Additional roles routes: Get role(s), update role, delete roles <br/>
 > TODO: Mock KeyVault env values <br />
-> TODO: Setup shell script for postgres, redis and ALL (pg, redis & be)
+> TODO: Setup shell script for postgres, redis and ALL (pg, redis & be) or maybe MAKEFILE?
 
 ## Prerequisites
 
