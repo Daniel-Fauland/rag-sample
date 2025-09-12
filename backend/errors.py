@@ -51,7 +51,17 @@ class InsufficientPermissions(FastAPIExceptions):
 
     def __init__(self, message: str = None):
         if message is not None:
-            self.message = f"Missing permission: {message}"
+            self.message = f"Missing permission(s): {message}"
+        super().__init__(self.message)
+
+
+class InsufficientRoles(FastAPIExceptions):
+    """User does not have the necessary role to perform this action
+    """
+
+    def __init__(self, message: str = None):
+        if message is not None:
+            self.message = f"Any one of these roles is needed: {message}"
         super().__init__(self.message)
 
 
@@ -152,6 +162,16 @@ def register_errors(app: FastAPI):
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"message": "User does not have the necessary permissions to perform this action",
                     "error_code": "105_insufficient_permissions",
+                    "solution": "Contact your administrator for assistance"}
+        )
+    )
+
+    app.add_exception_handler(
+        InsufficientRoles,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "User does not have the necessary role to perform this action",
+                    "error_code": "106_insufficient_roles",
                     "solution": "Contact your administrator for assistance"}
         )
     )

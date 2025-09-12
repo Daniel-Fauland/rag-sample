@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer
 from fastapi.security.http import HTTPAuthorizationCredentials
 from sqlmodel.ext.asyncio.session import AsyncSession
 from auth.jwt import JWTHandler
-from errors import InvalidAccessToken, InvalidRefreshToken, InsufficientPermissions
+from errors import InvalidAccessToken, InvalidRefreshToken, InsufficientRoles, InsufficientPermissions
 from core.user.service import UserService
 from models.user.response import UserModel
 from models.auth import Permission
@@ -72,9 +72,9 @@ class RoleChecker():
         self.allowed_roles = list(set(allowed_roles + ['admin']))
 
     def __call__(self, current_user: UserModel = Depends(get_current_user)) -> bool:
-        if not any(role.name in self.allowed_roles for role in current_user.roles if role.is_active):
-            raise InsufficientPermissions
-        return True
+        if any(role.name in self.allowed_roles for role in current_user.roles if role.is_active):
+            return True
+        raise InsufficientRoles(self.allowed_roles)
 
 
 class PermissionChecker():
@@ -104,10 +104,13 @@ class PermissionChecker():
         user_permissions = self._get_user_permissions(current_user)
 
         # Check if user has all required permissions
+        missing_permissions = []
         for required_perm in self.required_permissions:
             perm_tuple = (required_perm.type.value,
                           required_perm.resource.value, required_perm.context.value)
             if perm_tuple not in user_permissions:
-                raise InsufficientPermissions(
+                missing_permissions.append(
                     f"{required_perm.type.value}:{required_perm.resource.value}:{required_perm.context.value}")
+        if missing_permissions:
+            raise InsufficientPermissions(missing_permissions)
         return True
