@@ -94,6 +94,14 @@ class InvalidUUID(FastAPIExceptions):
         super().__init__(self.message)
 
 
+class UserInvalidPassword(FastAPIExceptions):
+    """The provided password does not match the users password"""
+
+
+class InternalServerError(FastAPIExceptions):
+    """An internal server error occured"""
+
+
 def create_exception_handler(status_code: int, detail: str) -> Callable[[Request, Exception], JSONResponse]:
     async def exception_handler(request: Request, exc: FastAPIExceptions):
         # Use dynamic message if available, otherwise use the static detail
@@ -138,7 +146,7 @@ def register_errors(app: FastAPI):
     app.add_exception_handler(
         XValueError,
         create_exception_handler(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": "ValueError due to one or more wrong arguments",
                     "error_code": "102_value_error",
                     "solution": "Make sure you provide valid arguments to the api."}
@@ -232,5 +240,25 @@ def register_errors(app: FastAPI):
             detail={"message": "The provided uuid is not valid",
                     "error_code": "111_invalid_uuid",
                     "solution": "Provide a valid UUID"}
+        )
+    )
+
+    app.add_exception_handler(
+        UserInvalidPassword,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"message": "The provided password does not match the users password",
+                    "error_code": "112_invalid_password",
+                    "solution": "Provide the correct user password"}
+        )
+    )
+
+    app.add_exception_handler(
+        InternalServerError,
+        create_exception_handler(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "An internal server error occured",
+                    "error_code": "113_internal_server_error",
+                    "solution": "Contact the administrator for assistance"}
         )
     )

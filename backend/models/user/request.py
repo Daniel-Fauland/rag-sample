@@ -80,3 +80,34 @@ class UserUpdateRequest(BaseModel):
         if v is not None and len(v.strip()) == 0:
             raise ValueError("Name fields cannot be empty strings")
         return v.strip() if v is not None else v
+
+
+class PasswordUpdateRequest(BaseModel):
+    """Request model for updating user password."""
+    old_password: str = Field(..., description="The user's current password", examples=[
+                              "OldPassword123"])
+    new_password: str = Field(..., description="The user's new password", examples=[
+                              "NewPassword456"])
+
+    @field_validator('old_password', 'new_password')
+    @classmethod
+    def validate_passwords(cls, v: str) -> str:
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Password cannot be empty")
+        return v.strip()
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError(
+                "New password must be at least 8 characters long.")
+        if not any(c.islower() for c in v):
+            raise ValueError(
+                "New password must contain at least one lowercase letter.")
+        if not any(c.isupper() for c in v):
+            raise ValueError(
+                "New password must contain at least one uppercase letter.")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("New password must contain at least one number.")
+        return v

@@ -87,3 +87,8 @@ class SigninResponse(SigninRefreshModelBase):
 class RefreshResponse(SigninRefreshModelBase):
     message: str = Field(..., description="A status message about the login", examples=[
                          "Refresh successful"])
+
+
+class PasswordUpdateResponse(BaseModel):
+    message: str = Field(..., description="A status message about the password change", examples=[
+                         "Password changed successfully"])

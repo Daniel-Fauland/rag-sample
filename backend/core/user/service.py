@@ -9,8 +9,10 @@ from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
 from models.user.request import SignupRequest
 from models.user.response import UserModel
+from errors import UserInvalidPassword
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
+from utils.logging import logger
 from config import config
 
 user_helper = UserHelper()
@@ -274,3 +276,37 @@ class UserService:
             User object if updated successfully, None if user was not found
         """
         return await self._update_user(session=session, where_clause=User.email == email, update_data=update_data)
+
+    async def update_user_password(self, user: UserModel, old_password: str, new_password: str, session: AsyncSession) -> bool:
+        """Update a user's password after verifying the old password.
+
+        Args:
+            user: The user model
+            old_password: The user's current password
+            new_password: The user's new password
+            session: Database session
+
+        Returns:
+            bool: True if password was updated successfully
+
+        Raises:
+            ValueError: If old password is incorrect
+            Exception: If password hashing fails
+        """
+        # Verify old password
+        is_old_password_correct = await user_helper.verify_password(old_password, user.password_hash)
+        if not is_old_password_correct:
+            raise UserInvalidPassword
+
+        # Hash new password
+        new_password_hash = await user_helper.hash_password(new_password)
+        try:
+            # Update password
+            user.password_hash = new_password_hash
+            await session.commit()
+            await session.refresh(user)
+            return True
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Could not update users password: {e}")
+            return False

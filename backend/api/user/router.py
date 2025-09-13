@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, Depends, Request, status, Query, Path, HTTPException
+from fastapi import APIRouter, Depends, Request, status, Query, Path
 from sqlmodel.ext.asyncio.session import AsyncSession
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -7,11 +7,11 @@ from core.user.service import UserService
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from auth.auth import get_current_user, check_ownership_permissions
-from models.user.request import SignupRequest, LoginRequest, LogoutRequest, UserUpdateRequest
-from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase
+from models.user.request import SignupRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
+from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
 from models.auth import Permission
 from auth.auth import PermissionChecker
-from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID
+from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID, XValueError, InternalServerError
 from auth.auth import AccessTokenBearer, RefreshTokenBearer
 from database.session import get_session
 from database.redis import redis_manager
@@ -304,9 +304,9 @@ async def update_user(id: str = Path(..., description="The user email or uuid", 
                       current_user: UserModel = Depends(get_current_user)):
     """Update a specific user in the database by the email **OR** the UUID <br />
 
-    Args:
-        id: The user email or UUID to update
-        update_data: The user data to update (all fields optional for PATCH-like behavior)
+    Args: <br />
+        id: The user email or UUID to update <br />
+        update_data: The user data to update (all fields optional for PATCH-like behavior) <br />
 
     Returns: <br />
         UserModel: The updated user data including the associated roles & permissions <br />
@@ -326,8 +326,7 @@ async def update_user(id: str = Path(..., description="The user email or uuid", 
         exclude_none=True) if update_data else {}
 
     if not update_dict:
-        raise HTTPException(
-            status_code=400, detail="No fields provided for update")
+        raise XValueError("No fields provided for update")
 
     # Now proceed with the database update
     if "@" in id:
@@ -341,6 +340,28 @@ async def update_user(id: str = Path(..., description="The user email or uuid", 
 
     if not updated_user:
         raise UserNotFound
-
-    # Return the updated user with roles and permissions
     return await service.get_user_by_id(id=updated_user.id, session=session, include_roles=True, include_permissions=True)
+
+
+@user_router.post("/update-password", status_code=status.HTTP_201_CREATED, response_model=PasswordUpdateResponse)
+async def update_password(password_data: PasswordUpdateRequest,
+                          session: AsyncSession = Depends(get_session),
+                          current_user: UserModel = Depends(get_current_user)):
+    """Update the current user's password <br />
+
+    Args: <br />
+        password_data: The old and new password data <br />
+
+    Returns: <br />
+        201 Created: Password successfully updated <br />
+    """
+    # Update password using the current user's id
+    password_updated = await service.update_user_password(
+        user=current_user,
+        old_password=password_data.old_password,
+        new_password=password_data.new_password,
+        session=session
+    )
+    if not password_updated:
+        raise InternalServerError
+    return PasswordUpdateResponse(message="Password changed successfully")
