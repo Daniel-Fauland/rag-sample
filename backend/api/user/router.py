@@ -182,6 +182,31 @@ async def get_active_user(user: UserModel = Depends(get_current_user)):
     return user
 
 
+@user_router.post("/update-password", status_code=status.HTTP_201_CREATED, response_model=PasswordUpdateResponse)
+async def update_active_user_password(password_data: PasswordUpdateRequest,
+                                      session: AsyncSession = Depends(
+                                          get_session),
+                                      current_user: UserModel = Depends(get_current_user)):
+    """Update the current user's password <br />
+
+    Args: <br />
+        password_data: The old and new password data <br />
+
+    Returns: <br />
+        201 Created: Password successfully updated <br />
+    """
+    # Update password using the current user's id
+    password_updated = await service.update_user_password(
+        user=current_user,
+        old_password=password_data.old_password,
+        new_password=password_data.new_password,
+        session=session
+    )
+    if not password_updated:
+        raise InternalServerError
+    return PasswordUpdateResponse(message="Password changed successfully")
+
+
 @user_router.get("", status_code=status.HTTP_200_OK, response_model=list[UserModelBase])
 async def get_all_users(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
@@ -264,39 +289,6 @@ async def get_specific_user(id: str = Path(..., description="The user email or u
     return user
 
 
-@user_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
-                      session: AsyncSession = Depends(get_session),
-                      current_user: UserModel = Depends(get_current_user)):
-    """Delete a specific user from the database by the email **OR** the UUID <br />
-
-    Returns: <br />
-        204 No Content: User successfully deleted <br />
-    """
-    # Check permissions based on ownership
-    check_ownership_permissions(
-        current_user=current_user,
-        target_id=id,
-        own_data_permissions=[Permission(
-            type="delete", resource="user", context="me")],
-        other_data_permissions=[Permission(
-            type="delete", resource="user", context="all")]
-    )
-
-    # Now proceed with the database deletion
-    if "@" in id:
-        user_deleted = await service.delete_user_by_email(email=id, session=session)
-    else:
-        try:
-            user_id = uuid.UUID(id)
-        except ValueError:
-            raise InvalidUUID(id)
-        user_deleted = await service.delete_user(id=user_id, session=session)
-
-    if not user_deleted:
-        raise UserNotFound
-
-
 @user_router.put("/{id}", status_code=status.HTTP_200_OK, response_model=UserModel)
 async def update_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
                       update_data: UserUpdateRequest = None,
@@ -343,25 +335,34 @@ async def update_user(id: str = Path(..., description="The user email or uuid", 
     return await service.get_user_by_id(id=updated_user.id, session=session, include_roles=True, include_permissions=True)
 
 
-@user_router.post("/update-password", status_code=status.HTTP_201_CREATED, response_model=PasswordUpdateResponse)
-async def update_password(password_data: PasswordUpdateRequest,
-                          session: AsyncSession = Depends(get_session),
-                          current_user: UserModel = Depends(get_current_user)):
-    """Update the current user's password <br />
-
-    Args: <br />
-        password_data: The old and new password data <br />
+@user_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
+                      session: AsyncSession = Depends(get_session),
+                      current_user: UserModel = Depends(get_current_user)):
+    """Delete a specific user from the database by the email **OR** the UUID <br />
 
     Returns: <br />
-        201 Created: Password successfully updated <br />
+        204 No Content: User successfully deleted <br />
     """
-    # Update password using the current user's id
-    password_updated = await service.update_user_password(
-        user=current_user,
-        old_password=password_data.old_password,
-        new_password=password_data.new_password,
-        session=session
+    # Check permissions based on ownership
+    check_ownership_permissions(
+        current_user=current_user,
+        target_id=id,
+        own_data_permissions=[Permission(
+            type="delete", resource="user", context="me")],
+        other_data_permissions=[Permission(
+            type="delete", resource="user", context="all")]
     )
-    if not password_updated:
-        raise InternalServerError
-    return PasswordUpdateResponse(message="Password changed successfully")
+
+    # Now proceed with the database deletion
+    if "@" in id:
+        user_deleted = await service.delete_user_by_email(email=id, session=session)
+    else:
+        try:
+            user_id = uuid.UUID(id)
+        except ValueError:
+            raise InvalidUUID(id)
+        user_deleted = await service.delete_user(id=user_id, session=session)
+
+    if not user_deleted:
+        raise UserNotFound
