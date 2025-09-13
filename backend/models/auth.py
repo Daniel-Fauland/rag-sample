@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 
 class Type(str, Enum):
-    # The type / action to take
+    # The type/action to take
     read = "read"
     write = "write"
     update = "update"
@@ -20,7 +20,7 @@ class Resource(str, Enum):
 
 
 class Context(str, Enum):
-    # The context / scope
+    # The context/scope
     me = "me"
     all = "all"
 

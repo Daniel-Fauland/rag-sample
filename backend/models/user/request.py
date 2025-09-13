@@ -1,5 +1,13 @@
+from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
+
+
+class AccountType(str, Enum):
+    local = "local",
+    sso_google = "sso_google",
+    sso_microsoft = "sso_microsoft"
+    # add more as needed
 
 
 class UserCommonModel(BaseModel):
@@ -11,7 +19,7 @@ class UserCommonModel(BaseModel):
     def validate_email(cls, v: str) -> str:
         if "@" not in v or "." not in v:
             raise ValueError(
-                "email is not valid. It must include '@' and '.'")
+                "Invalid email. A valid email must include '@' and '.'")
         return v
 
 
@@ -21,6 +29,7 @@ class SignupRequest(UserCommonModel):
                             "John"])
     last_name: str = Field(..., description="The users last name", examples=[
                            "Doe"])
+    account_type: AccountType = AccountType.local
 
     @field_validator('password')
     @classmethod

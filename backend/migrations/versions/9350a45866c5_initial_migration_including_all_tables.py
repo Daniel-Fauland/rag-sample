@@ -39,6 +39,7 @@ def upgrade() -> None:
                     sa.Column('last_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
                     sa.Column('is_verified', sa.Boolean(), nullable=False),
                     sa.Column('password_hash', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+                    sa.Column('account_type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
                     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), nullable=True),
                     sa.Column('modified_at', postgresql.TIMESTAMP(timezone=True), nullable=True),
                     sa.PrimaryKeyConstraint('id'))

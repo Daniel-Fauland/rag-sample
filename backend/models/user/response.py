@@ -14,6 +14,8 @@ class UserModelBase(BaseModel):
                            "Doe"])
     is_verified: bool = Field(..., description="Whether the user is verified", examples=[
                               True])
+    account_type: str = Field(..., description="Wheter the user account was created locally on the database or via SSO (e.g. Google Auth)", examples=[
+                              "local"])
     created_at: datetime = Field(...,
                                  description="A timestamp when the user was created")
     modified_at: datetime = Field(...,

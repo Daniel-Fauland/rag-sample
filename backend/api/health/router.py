@@ -18,10 +18,13 @@ limiter = Limiter(key_func=get_remote_address)
 @health_router.get("", response_model=HealthCheckResponse)
 @limiter.limit("5/minute")  # 5 requests per minute per IP
 async def get_fastapi_version(request: Request) -> dict:
-    """Check the FastAPI version
+    """Check the FastAPI version <br />
 
-    Returns:
-        dict: The FastAPI version
+    Raises: <br />
+        HealthCheckError: If the FastAPI CLI version can't be retrieved <br />
+
+    Returns: <br />
+        dict: The FastAPI version <br />
     """
     result = await health_service.check_FastAPI_version()
     try:
@@ -34,6 +37,14 @@ async def get_fastapi_version(request: Request) -> dict:
 @health_router.get("/db", status_code=200)
 @limiter.limit("5/minute")  # 5 requests per minute per IP
 async def check_db_status(request: Request, session: AsyncSession = Depends(get_session)) -> dict:
+    """Check if the DB connection is working <br />
+
+    Raises: <br />
+        HealthCheckDBError: If the DB can't be reached <br />
+
+    Returns: <br />
+        dict: The DB connection status <br />
+    """
     result: dict = await health_service.check_db_health(session)
     if not result:
         raise HealthCheckDBError

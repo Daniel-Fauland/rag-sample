@@ -21,6 +21,7 @@ class User(SQLModel, table=True):
     last_name: str
     is_verified: bool = Field(default=True)
     password_hash: str = Field(exclude=True)
+    account_type: str = Field(default="local")
     created_at: datetime = Field(sa_column=Column(
         pg.TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
     ))

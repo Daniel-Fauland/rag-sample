@@ -27,19 +27,19 @@ def upgrade() -> None:
 
     # Insert User 1 if email does not exist
     op.execute(f"""
-        INSERT INTO users (id, email, first_name, last_name, is_verified, password_hash, created_at, modified_at)
+        INSERT INTO users (id, email, first_name, last_name, is_verified, password_hash, account_type, created_at, modified_at)
         SELECT '0198c7ff-09a9-7b8c-9c6f-65996832605c', 'admin@example.com', 'Max', 'Mustermann', TRUE,
                '$argon2id$v=19$m=8192,t=2,p=10$cAWQyBLCG58aViCV4yQuqw$B038tldLPEZtVwlN47ONMlS3MXGCFZl/LR3VRY+QR14',
-               '{current_timestamp}', '{current_timestamp}'
+               'local', '{current_timestamp}', '{current_timestamp}'
         WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@example.com')
     """)
 
     # Insert User 2 if email does not exist
     op.execute(f"""
-        INSERT INTO users (id, email, first_name, last_name, is_verified, password_hash, created_at, modified_at)
+        INSERT INTO users (id, email, first_name, last_name, is_verified, password_hash, account_type, created_at, modified_at)
         SELECT '0198c7ff-7032-7649-88f0-438321150e2c', 'user@example.com', 'Marcus', 'Müller', TRUE,
                '$argon2id$v=19$m=8192,t=2,p=10$1CgqUuMOLDVscJsRi2+vAw$YdMavMSpgy17KmeRtcDvtQ2kPdTPqMUqyhR8E2DfkBQ',
-               '{current_timestamp}', '{current_timestamp}'
+               'local', '{current_timestamp}', '{current_timestamp}'
         WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'user@example.com')
     """)
 
