@@ -173,12 +173,14 @@ async def logout(
 
 
 @user_router.get("/me", status_code=status.HTTP_200_OK, response_model=UserModel)
-async def get_active_user(user: UserModel = Depends(get_current_user)):
+async def get_active_user(user: UserModel | None = Depends(get_current_user)):
     """Get the current logged in user and return the user data <br />
 
     Returns: <br />
         UserModel: The user data including the associated roles <br />
     """
+    if user is None:
+        raise UserNotFound
     return user
 
 
@@ -233,7 +235,7 @@ async def get_all_users_with_permissions(order_by_field: str = Query(
 @user_router.get("/{id}", status_code=status.HTTP_200_OK, response_model=UserModel)
 async def get_specific_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
                             session: AsyncSession = Depends(get_session),
-                            current_user: UserModel = Depends(get_current_user)):
+                            current_user: UserModel | None = Depends(get_current_user)):
     """Get a specific user in the database by the email **OR** the UUID <br />
 
     Returns: <br />
@@ -262,3 +264,36 @@ async def get_specific_user(id: str = Path(..., description="The user email or u
     if not user:
         raise UserNotFound
     return user
+
+
+@user_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
+                      session: AsyncSession = Depends(get_session),
+                      current_user: UserModel | None = Depends(get_current_user)):
+    """Delete a specific user from the database by the email **OR** the UUID <br />
+
+    Returns: <br />
+        204 No Content: User successfully deleted <br />
+    """
+    # Check permissions based on ownership
+    check_ownership_permissions(
+        current_user=current_user,
+        target_id=id,
+        own_data_permissions=[Permission(
+            type="delete", resource="user", context="me")],
+        other_data_permissions=[Permission(
+            type="delete", resource="user", context="all")]
+    )
+
+    # Now proceed with the database deletion
+    if "@" in id:
+        user_deleted = await service.delete_user_by_email(email=id, session=session)
+    else:
+        try:
+            user_id = uuid.UUID(id)
+        except ValueError:
+            raise InvalidUUID(id)
+        user_deleted = await service.delete_user(id=user_id, session=session)
+
+    if not user_deleted:
+        raise UserNotFound

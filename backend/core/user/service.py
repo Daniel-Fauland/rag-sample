@@ -174,3 +174,54 @@ class UserService:
             expiry=timedelta(days=config.jwt_refresh_token_expiry)
         )
         return access_token, refresh_token
+
+    async def delete_user(self, id: uuid.UUID, session: AsyncSession) -> bool:
+        """Delete a user from the database by their unique identifier.
+
+        Args:
+            id: The user's UUID
+            session: Database session
+
+        Returns:
+            bool: True if user was deleted, False if user was not found
+
+        Raises:
+            ValueError: If the user ID is invalid
+        """
+        try:
+            # First check if user exists
+            user = await self.get_user_by_id(id=id, session=session)
+            if not user:
+                return False
+
+            # Delete the user (cascade will handle related records)
+            await session.delete(user)
+            await session.commit()
+            return True
+        except Exception as e:
+            await session.rollback()
+            raise e
+
+    async def delete_user_by_email(self, email: str, session: AsyncSession) -> bool:
+        """Delete a user from the database by their email.
+
+        Args:
+            email: The user's email
+            session: Database session
+
+        Returns:
+            bool: True if user was deleted, False if user was not found
+        """
+        try:
+            # First check if user exists
+            user = await self.get_user_by_email(email=email, session=session)
+            if not user:
+                return False
+
+            # Delete the user (cascade will handle related records)
+            await session.delete(user)
+            await session.commit()
+            return True
+        except Exception as e:
+            await session.rollback()
+            raise e

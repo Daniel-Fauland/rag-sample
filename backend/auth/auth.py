@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer
 from fastapi.security.http import HTTPAuthorizationCredentials
 from sqlmodel.ext.asyncio.session import AsyncSession
 from auth.jwt import JWTHandler
-from errors import InvalidAccessToken, InvalidRefreshToken, InsufficientRoles, InsufficientPermissions
+from errors import InvalidAccessToken, InvalidRefreshToken, InsufficientRoles, InsufficientPermissions, UserNotFound
 from core.user.service import UserService
 from models.user.response import UserModel
 from models.auth import Permission
@@ -95,7 +95,10 @@ class PermissionChecker():
                         )
         return user_permissions
 
-    def __call__(self, current_user: UserModel = Depends(get_current_user)) -> bool:
+    def __call__(self, current_user: UserModel | None = Depends(get_current_user)) -> bool:
+        if current_user is None:
+            raise UserNotFound
+
         # Allow every action for admins
         if any(role.name == "admin" and role.is_active for role in current_user.roles):
             return True
