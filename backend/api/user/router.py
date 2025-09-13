@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, Depends, Request, status, Query, Path
+from fastapi import APIRouter, Depends, Request, status, Query, Path, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -7,7 +7,7 @@ from core.user.service import UserService
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from auth.auth import get_current_user, check_ownership_permissions
-from models.user.request import SignupRequest, LoginRequest, LogoutRequest
+from models.user.request import SignupRequest, LoginRequest, LogoutRequest, UserUpdateRequest
 from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase
 from models.auth import Permission
 from auth.auth import PermissionChecker
@@ -173,14 +173,12 @@ async def logout(
 
 
 @user_router.get("/me", status_code=status.HTTP_200_OK, response_model=UserModel)
-async def get_active_user(user: UserModel | None = Depends(get_current_user)):
+async def get_active_user(user: UserModel = Depends(get_current_user)):
     """Get the current logged in user and return the user data <br />
 
     Returns: <br />
         UserModel: The user data including the associated roles <br />
     """
-    if user is None:
-        raise UserNotFound
     return user
 
 
@@ -235,7 +233,7 @@ async def get_all_users_with_permissions(order_by_field: str = Query(
 @user_router.get("/{id}", status_code=status.HTTP_200_OK, response_model=UserModel)
 async def get_specific_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
                             session: AsyncSession = Depends(get_session),
-                            current_user: UserModel | None = Depends(get_current_user)):
+                            current_user: UserModel = Depends(get_current_user)):
     """Get a specific user in the database by the email **OR** the UUID <br />
 
     Returns: <br />
@@ -269,7 +267,7 @@ async def get_specific_user(id: str = Path(..., description="The user email or u
 @user_router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
                       session: AsyncSession = Depends(get_session),
-                      current_user: UserModel | None = Depends(get_current_user)):
+                      current_user: UserModel = Depends(get_current_user)):
     """Delete a specific user from the database by the email **OR** the UUID <br />
 
     Returns: <br />
@@ -297,3 +295,52 @@ async def delete_user(id: str = Path(..., description="The user email or uuid", 
 
     if not user_deleted:
         raise UserNotFound
+
+
+@user_router.put("/{id}", status_code=status.HTTP_200_OK, response_model=UserModel)
+async def update_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
+                      update_data: UserUpdateRequest = None,
+                      session: AsyncSession = Depends(get_session),
+                      current_user: UserModel = Depends(get_current_user)):
+    """Update a specific user in the database by the email **OR** the UUID <br />
+
+    Args:
+        id: The user email or UUID to update
+        update_data: The user data to update (all fields optional for PATCH-like behavior)
+
+    Returns: <br />
+        UserModel: The updated user data including the associated roles & permissions <br />
+    """
+    # Check permissions based on ownership
+    check_ownership_permissions(
+        current_user=current_user,
+        target_id=id,
+        own_data_permissions=[Permission(
+            type="update", resource="user", context="me")],
+        other_data_permissions=[Permission(
+            type="update", resource="user", context="all")]
+    )
+
+    # Convert Pydantic model to dict, excluding None values
+    update_dict = update_data.model_dump(
+        exclude_none=True) if update_data else {}
+
+    if not update_dict:
+        raise HTTPException(
+            status_code=400, detail="No fields provided for update")
+
+    # Now proceed with the database update
+    if "@" in id:
+        updated_user = await service.update_user_by_email(email=id, update_data=update_dict, session=session)
+    else:
+        try:
+            user_id = uuid.UUID(id)
+        except ValueError:
+            raise InvalidUUID(id)
+        updated_user = await service.update_user(id=user_id, update_data=update_dict, session=session)
+
+    if not updated_user:
+        raise UserNotFound
+
+    # Return the updated user with roles and permissions
+    return await service.get_user_by_id(id=updated_user.id, session=session, include_roles=True, include_permissions=True)

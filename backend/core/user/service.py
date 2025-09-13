@@ -58,6 +58,26 @@ class UserService:
             users = result.first()
         return users
 
+    async def _update_user(self, session: AsyncSession, where_clause, update_data: dict) -> User | None:
+        """Helper to update a user by a given where clause"""
+        try:
+            # First check if user exists
+            user = await self._get_users(session=session, where_clause=where_clause)
+            if not user:
+                return None
+
+            # Update only the provided fields
+            for field, value in update_data.items():
+                if hasattr(user, field) and value is not None:
+                    setattr(user, field, value)
+
+            await session.commit()
+            await session.refresh(user)
+            return user
+        except Exception as e:
+            await session.rollback()
+            raise e
+
     async def get_user_by_id(self, id: uuid.UUID, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False) -> User | None:
         """Get a user by their unique identifier.
 
@@ -225,3 +245,32 @@ class UserService:
         except Exception as e:
             await session.rollback()
             raise e
+
+    async def update_user(self, id: uuid.UUID, update_data: dict, session: AsyncSession) -> User | None:
+        """Update a user in the database by their unique identifier.
+
+        Args:
+            id: The user's UUID
+            update_data: Dictionary containing the fields to update
+            session: Database session
+
+        Returns:
+            User object if updated successfully, None if user was not found
+
+        Raises:
+            ValueError: If the user ID is invalid
+        """
+        return await self._update_user(session=session, where_clause=User.id == id, update_data=update_data)
+
+    async def update_user_by_email(self, email: str, update_data: dict, session: AsyncSession) -> User | None:
+        """Update a user in the database by their email.
+
+        Args:
+            email: The user's email
+            update_data: Dictionary containing the fields to update
+            session: Database session
+
+        Returns:
+            User object if updated successfully, None if user was not found
+        """
+        return await self._update_user(session=session, where_clause=User.email == email, update_data=update_data)

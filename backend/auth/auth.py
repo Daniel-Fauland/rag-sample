@@ -60,7 +60,9 @@ class RefreshTokenBearer(TokenBearer):
 
 async def get_current_user(token_details: dict = Depends(AccessTokenBearer()), session: AsyncSession = Depends(get_session)):
     id = token_details['user']['id']
-    user: UserModel = await user_service.get_user_by_id(id=id, session=session, include_roles=True, include_permissions=True)
+    user: UserModel | None = await user_service.get_user_by_id(id=id, session=session, include_roles=True, include_permissions=True)
+    if user is None:
+        raise UserNotFound
     return user
 
 
@@ -95,10 +97,7 @@ class PermissionChecker():
                         )
         return user_permissions
 
-    def __call__(self, current_user: UserModel | None = Depends(get_current_user)) -> bool:
-        if current_user is None:
-            raise UserNotFound
-
+    def __call__(self, current_user: UserModel = Depends(get_current_user)) -> bool:
         # Allow every action for admins
         if any(role.name == "admin" and role.is_active for role in current_user.roles):
             return True

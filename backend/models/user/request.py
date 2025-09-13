@@ -54,3 +54,29 @@ class LoginRequest(UserCommonModel):
 class LogoutRequest(BaseModel):
     refresh_token: Optional[str] = Field(
         None, description="The refresh token to invalidate", examples=["eyJhb..."])
+
+
+class UserUpdateRequest(BaseModel):
+    """Request model for updating user information. All fields are optional to support PATCH-like behavior."""
+    email: Optional[str] = Field(None, description="The user's email", examples=[
+                                 "john.doe@example.com"])
+    first_name: Optional[str] = Field(
+        None, description="The user's first name", examples=["John"])
+    last_name: Optional[str] = Field(
+        None, description="The user's last name", examples=["Doe"])
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            if "@" not in v or "." not in v:
+                raise ValueError(
+                    "Invalid email. A valid email must include '@' and '.'")
+        return v
+
+    @field_validator('first_name', 'last_name')
+    @classmethod
+    def validate_names(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and len(v.strip()) == 0:
+            raise ValueError("Name fields cannot be empty strings")
+        return v.strip() if v is not None else v
