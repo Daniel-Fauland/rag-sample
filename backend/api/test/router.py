@@ -13,9 +13,9 @@ service = TestService()
 # Permissions
 read_user_all = PermissionChecker(
     [Permission(type="read", resource="user", context="all")])
-write_user_me_write_role_all = PermissionChecker(
-    [Permission(type="write", resource="user", context="me"),
-     Permission(type="write", resource="role", context="all")])
+create_user_me_create_role_all = PermissionChecker(
+    [Permission(type="create", resource="user", context="me"),
+     Permission(type="create", resource="role", context="all")])
 role_admin = RoleChecker([])
 
 
@@ -34,9 +34,9 @@ async def test_user_role(_: bool = Depends(read_user_all)) -> JSONResponse:
     return JSONResponse(content={"message": "you will only see this if you have the 'read:user:all' permission."}, status_code=200)
 
 
-@test_router.get("/test-write-user-me-write-role-all-permission", status_code=200)
-async def test_user_role2(_: bool = Depends(write_user_me_write_role_all)) -> JSONResponse:
-    return JSONResponse(content={"message": "you will only see this if you have the 'write:user:me' & 'write:role:all' permission."}, status_code=200)
+@test_router.get("/test-create-user-me-create-role-all-permission", status_code=200)
+async def test_user_role2(_: bool = Depends(create_user_me_create_role_all)) -> JSONResponse:
+    return JSONResponse(content={"message": "you will only see this if you have the 'create:user:me' & 'create:role:all' permission."}, status_code=200)
 
 
 @test_router.get("/test-admin-role", status_code=status.HTTP_200_OK)

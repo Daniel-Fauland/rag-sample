@@ -4,8 +4,8 @@ from pydantic import BaseModel
 
 class Type(str, Enum):
     # The type/action to take
+    create = "create"
     read = "read"
-    write = "write"
     update = "update"
     delete = "delete"
 

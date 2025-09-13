@@ -183,7 +183,7 @@ async def get_active_user(user: UserModel = Depends(get_current_user)):
 
 
 @user_router.get("", status_code=status.HTTP_200_OK, response_model=list[UserModelBase])
-async def get_users(order_by_field: str = Query(
+async def get_all_users(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
         order_by_direction: str = Query(
         None, description="Wheter to sort the field asc or desc", example="desc"),
@@ -207,7 +207,7 @@ async def get_users(order_by_field: str = Query(
 
 
 @user_router.get("-with-permissions", status_code=status.HTTP_200_OK, response_model=list[UserModel])
-async def get_users_with_permissions(order_by_field: str = Query(
+async def get_all_users_with_permissions(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
         order_by_direction: str = Query(
         None, description="Wheter to sort the field asc or desc", example="desc"),

@@ -49,7 +49,7 @@ def upgrade() -> None:
             'created_at': current_timestamp
         },
         {
-            'type': 'write',
+            'type': 'create',
             'resource': 'user',
             'context': 'me',
             'description': 'Create own user data',
@@ -81,7 +81,7 @@ def upgrade() -> None:
             'created_at': current_timestamp
         },
         {
-            'type': 'write',
+            'type': 'create',
             'resource': 'user',
             'context': 'all',
             'description': 'Create any user data',
@@ -114,7 +114,7 @@ def upgrade() -> None:
             'created_at': current_timestamp
         },
         {
-            'type': 'write',
+            'type': 'create',
             'resource': 'role',
             'context': 'all',
             'description': 'Create any role data',
@@ -147,7 +147,7 @@ def upgrade() -> None:
             'created_at': current_timestamp
         },
         {
-            'type': 'write',
+            'type': 'create',
             'resource': 'permission',
             'context': 'all',
             'description': 'Create any permission data',
@@ -210,21 +210,21 @@ def downgrade() -> None:
     permissions_to_delete = [
         # User permissions
         {'type': 'read', 'resource': 'user', 'context': 'me'},
-        {'type': 'write', 'resource': 'user', 'context': 'me'},
+        {'type': 'create', 'resource': 'user', 'context': 'me'},
         {'type': 'update', 'resource': 'user', 'context': 'me'},
         {'type': 'delete', 'resource': 'user', 'context': 'me'},
         {'type': 'read', 'resource': 'user', 'context': 'all'},
-        {'type': 'write', 'resource': 'user', 'context': 'all'},
+        {'type': 'create', 'resource': 'user', 'context': 'all'},
         {'type': 'update', 'resource': 'user', 'context': 'all'},
         {'type': 'delete', 'resource': 'user', 'context': 'all'},
         # Role permissions
         {'type': 'read', 'resource': 'role', 'context': 'all'},
-        {'type': 'write', 'resource': 'role', 'context': 'all'},
+        {'type': 'create', 'resource': 'role', 'context': 'all'},
         {'type': 'update', 'resource': 'role', 'context': 'all'},
         {'type': 'delete', 'resource': 'role', 'context': 'all'},
         # Permission permissions
         {'type': 'read', 'resource': 'permission', 'context': 'all'},
-        {'type': 'write', 'resource': 'permission', 'context': 'all'},
+        {'type': 'create', 'resource': 'permission', 'context': 'all'},
         {'type': 'update', 'resource': 'permission', 'context': 'all'},
         {'type': 'delete', 'resource': 'permission', 'context': 'all'}
     ]
