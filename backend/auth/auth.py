@@ -114,3 +114,41 @@ class PermissionChecker():
         if missing_permissions:
             raise InsufficientPermissions(missing_permissions)
         return True
+
+
+def check_ownership_permissions(
+    current_user: UserModel,
+    target_id: str,
+    own_data_permissions: list[Permission],
+    other_data_permissions: list[Permission]
+) -> bool:
+    """
+    Check permissions based on whether the user is accessing their own data or others' data.
+
+    Args:
+        current_user: The authenticated user making the request
+        target_id: The ID/email of the target resource
+        own_data_permissions: List of permissions required for accessing own data
+        other_data_permissions: List of permissions required for accessing others' data
+
+    Returns:
+        bool: True if user has appropriate permissions
+
+    Raises:
+        InsufficientPermissions: If user lacks required permissions
+    """
+    current_user_id = str(current_user.id)
+    current_user_email = current_user.email
+
+    # Check if user is trying to access their own data
+    is_own_data = target_id in [current_user_id, current_user_email]
+
+    # Apply appropriate permission check
+    if is_own_data:
+        # User accessing their own data
+        checker = PermissionChecker(own_data_permissions)
+        return checker(current_user)
+    else:
+        # User accessing other's data
+        checker = PermissionChecker(other_data_permissions)
+        return checker(current_user)

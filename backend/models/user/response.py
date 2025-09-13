@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field
+from typing import Optional
 
 
 class UserModelBase(BaseModel):
@@ -61,7 +62,7 @@ class RoleModel(RoleModelBase):
 
 
 class UserModel(UserModelBase):
-    roles: list["RoleModelPermissionBase"]
+    roles: Optional[list["RoleModelPermissionBase"]] = None
 
 
 class SignupResponse(BaseModel):

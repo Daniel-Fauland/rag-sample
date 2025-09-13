@@ -1,8 +1,9 @@
 import uuid
 from datetime import timedelta
-from sqlmodel import select
+from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
+from typing import Sequence
 from database.schemas.users import User
 from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
@@ -17,7 +18,7 @@ jwt_handler = JWTHandler()
 
 
 class UserService:
-    async def _get_user(self, session: AsyncSession, where_clause, include_roles: bool = False, include_permissions: bool = False) -> User | None:
+    async def _get_users(self, session: AsyncSession, where_clause=None, order_by_field: str = None, order_by_direction: str = "desc", limit: int = None, include_roles: bool = False, include_permissions: bool = False, multiple: bool = False) -> User | None:
         """Helper to get a user by a given where clause"""
         options = []
         if include_roles:
@@ -29,10 +30,33 @@ class UserService:
         statement = select(User)
         if options:
             statement = statement.options(*options)
-        statement = statement.where(where_clause)
+        if where_clause is not None:
+            statement = statement.where(where_clause)
+        if order_by_field:
+            # Map allowed fields to User attributes for ordering
+            order_fields = {
+                "id": User.id,
+                "email": User.email,
+                "first_name": User.first_name,
+                "last_name": User.last_name,
+                "is_verified": User.is_verified,
+                "account_type": User.account_type,
+                "created_at": User.created_at,
+                "modified_at": User.modified_at
+            }
+            order_field = order_fields.get(order_by_field, User.id)
+            order_direction = desc if order_by_direction != "asc" else asc
+            statement = statement.order_by(order_direction(order_field))
+        if limit:
+            statement = statement.limit(limit)
         result = await session.exec(statement)
-        user = result.first()
-        return user
+        if multiple:
+            # Return all users that match the sql query
+            users = result.all()
+        else:
+            # Return only the first user that matches the sql query
+            users = result.first()
+        return users
 
     async def get_user_by_id(self, id: uuid.UUID, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False) -> User | None:
         """Get a user by their unique identifier.
@@ -46,7 +70,7 @@ class UserService:
         Returns:
             User object if found, None otherwise
         """
-        return await self._get_user(session=session, where_clause=User.id == id, include_roles=include_roles, include_permissions=include_permissions)
+        return await self._get_users(session=session, where_clause=User.id == id, include_roles=include_roles, include_permissions=include_permissions)
 
     async def get_user_by_email(self, email: str, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False) -> User | None:
         """Get a user by their email.
@@ -60,7 +84,23 @@ class UserService:
         Returns:
             User object if found, None otherwise
         """
-        return await self._get_user(session=session, where_clause=User.email == email, include_roles=include_roles, include_permissions=include_permissions)
+        return await self._get_users(session=session, where_clause=User.email == email, include_roles=include_roles, include_permissions=include_permissions)
+
+    async def get_users(self, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False, order_by_field: str = "id", order_by_direction: str = "desc", limit: int = None) -> Sequence[User]:
+        """Get all users in the database
+
+        Args:
+            session: Database session
+            include_roles: Whether to eagerly load user roles
+            include_permissions: Whether to eagerly load permissions for each role
+            order_by_field (str, optional): The Field to order the data by. Defaults to User.id.
+            order_by_direction (str, optional): The order direction. Defaults to 'desc'.
+            limit (int): The maximum number of records to return. Defaults no None which means no limit
+
+        Returns:
+            A sequence of User objects
+        """
+        return await self._get_users(session=session, include_roles=include_roles, include_permissions=include_permissions, order_by_field=order_by_field, order_by_direction=order_by_direction, limit=limit, multiple=True)
 
     async def user_exists(self, email: str, session: AsyncSession) -> bool:
         """Check if a user already exists in the database"""

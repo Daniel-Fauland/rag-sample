@@ -85,6 +85,15 @@ class UserNotVerified(FastAPIExceptions):
     pass
 
 
+class InvalidUUID(FastAPIExceptions):
+    """The provided uuid is not a valid"""
+
+    def __init__(self, message: str = None):
+        if message is not None:
+            self.message = f"Invalid UUID: {message}"
+        super().__init__(self.message)
+
+
 def create_exception_handler(status_code: int, detail: str) -> Callable[[Request, Exception], JSONResponse]:
     async def exception_handler(request: Request, exc: FastAPIExceptions):
         # Use dynamic message if available, otherwise use the static detail
@@ -213,5 +222,15 @@ def register_errors(app: FastAPI):
             detail={"message": "The user is not verified",
                     "error_code": "110_user_unverified",
                     "solution": "Contact your administrator for assistance"}
+        )
+    )
+
+    app.add_exception_handler(
+        InvalidUUID,
+        create_exception_handler(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "The provided uuid is not valid",
+                    "error_code": "111_invalid_uuid",
+                    "solution": "Provide a valid UUID"}
         )
     )

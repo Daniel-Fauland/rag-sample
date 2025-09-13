@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, Request, status
+import uuid
+from fastapi import APIRouter, Depends, Request, status, Query, Path
 from sqlmodel.ext.asyncio.session import AsyncSession
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from core.user.service import UserService
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
-from auth.auth import get_current_user
+from auth.auth import get_current_user, check_ownership_permissions
 from models.user.request import SignupRequest, LoginRequest, LogoutRequest
-from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel
-from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken
+from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase
+from models.auth import Permission
+from auth.auth import PermissionChecker
+from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID
 from auth.auth import AccessTokenBearer, RefreshTokenBearer
 from database.session import get_session
 from database.redis import redis_manager
@@ -24,6 +27,12 @@ refresh_token_bearer = RefreshTokenBearer()
 
 # Rate limiter for user endpoints
 limiter = Limiter(key_func=get_remote_address)
+
+# Permissions
+read_user_me = PermissionChecker(
+    [Permission(type="read", resource="user", context="me")])
+read_user_all = PermissionChecker(
+    [Permission(type="read", resource="user", context="all")])
 
 
 @user_router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=SignupResponse)
@@ -133,8 +142,7 @@ async def get_new_refresh_token(token_data: dict = Depends(refresh_token_bearer)
 @user_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     request: LogoutRequest,
-    token_data_access: dict = Depends(access_token_bearer),
-    session: AsyncSession = Depends(get_session)
+    token_data_access: dict = Depends(access_token_bearer)
 ):
     """Logout the user by invalidating the users access token. Optionally the refresh token can be provided in the request body to invalidate as well. <br />
 
@@ -142,22 +150,11 @@ async def logout(
         request (LogoutRequest): The request body containing the refresh_token <br />
 
     Raises:
-        UserNotFound: If the user related to the token was not found in the db <br />
-        UserNotVerified: If the user was found in the db but has the status "is_verified=False" <br />
         InvalidRefreshToken: If the RefreshToken is expired or invalid <br />
 
     Returns: <br />
         SignoutResponse: A status message about the signout <br />
     """
-    user_id = token_data_access["user"]["id"]
-    user: UserModel | None = await service.get_user_by_id(id=user_id, session=session, include_roles=True, include_permissions=True)
-
-    if not user:
-        raise UserNotFound
-
-    if not user.is_verified:
-        raise UserNotVerified
-
     # Invalidate access token by adding it to redis blacklist
     redis = redis_manager.get_client()
     await jwt_handler.add_jwt_to_blacklist(token_data=token_data_access, redis_client=redis)
@@ -182,4 +179,86 @@ async def get_active_user(user: UserModel = Depends(get_current_user)):
     Returns: <br />
         UserModel: The user data including the associated roles <br />
     """
+    return user
+
+
+@user_router.get("", status_code=status.HTTP_200_OK, response_model=list[UserModelBase])
+async def get_users(order_by_field: str = Query(
+        None, description="The field to order the records by", example="id"),
+        order_by_direction: str = Query(
+        None, description="Wheter to sort the field asc or desc", example="desc"),
+        limit: int = Query(None,
+                           description="The maximum number of records to return"),
+        session: AsyncSession = Depends(get_session),
+        _: bool = Depends(read_user_all)):
+    """Get all users in the database <br />
+
+    Returns: <br />
+        list[UserModelBase]: The user data without the associated roles & permissions <br />
+    """
+    users = await service.get_users(session=session,
+                                    include_roles=False,
+                                    include_permissions=False,
+                                    order_by_field=order_by_field,
+                                    order_by_direction=order_by_direction,
+                                    limit=limit)
+
+    return users
+
+
+@user_router.get("-with-permissions", status_code=status.HTTP_200_OK, response_model=list[UserModel])
+async def get_users_with_permissions(order_by_field: str = Query(
+        None, description="The field to order the records by", example="id"),
+        order_by_direction: str = Query(
+        None, description="Wheter to sort the field asc or desc", example="desc"),
+        limit: int = Query(None,
+                           description="The maximum number of records to return"),
+        session: AsyncSession = Depends(get_session),
+        _: bool = Depends(read_user_all)):
+    """Get all users in the database <br />
+
+    Returns: <br />
+        list[UserModel]: The user data including the associated roles & permissions <br />
+    """
+    users = await service.get_users(session=session,
+                                    include_roles=True,
+                                    include_permissions=True,
+                                    order_by_field=order_by_field,
+                                    order_by_direction=order_by_direction,
+                                    limit=limit)
+
+    return users
+
+
+@user_router.get("/{id}", status_code=status.HTTP_200_OK, response_model=UserModel)
+async def get_specific_user(id: str = Path(..., description="The user email or uuid", example="0198c7ff-7032-7649-88f0-438321150e2c"),
+                            session: AsyncSession = Depends(get_session),
+                            current_user: UserModel = Depends(get_current_user)):
+    """Get a specific user in the database by the email **OR** the UUID <br />
+
+    Returns: <br />
+        UserModel: The user data including the associated roles & permissions <br />
+    """
+    # Check permissions based on ownership
+    check_ownership_permissions(
+        current_user=current_user,
+        target_id=id,
+        own_data_permissions=[Permission(
+            type="read", resource="user", context="me")],
+        other_data_permissions=[Permission(
+            type="read", resource="user", context="all")]
+    )
+
+    # Now proceed with the database query
+    if "@" in id:
+        user = await service.get_user_by_email(email=id, session=session, include_roles=True, include_permissions=True)
+    else:
+        try:
+            uuid.UUID(id)
+        except ValueError:
+            raise InvalidUUID(id)
+        user = await service.get_user_by_id(id=id, session=session, include_roles=True, include_permissions=True)
+
+    if not user:
+        raise UserNotFound
     return user
