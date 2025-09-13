@@ -12,6 +12,7 @@ from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNo
 from auth.auth import AccessTokenBearer, RefreshTokenBearer
 from database.session import get_session
 from database.redis import redis_manager
+from config import config
 
 
 user_router = APIRouter()
@@ -26,7 +27,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @user_router.post("/signup", status_code=201, response_model=SignupResponse)
-@limiter.limit("5/minute")  # 5 signups per minute per IP
+@limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def signup(request: Request, user_data: SignupRequest, session: AsyncSession = Depends(get_session)):
     """Create a new user in the database <br />
 
@@ -46,7 +47,7 @@ async def signup(request: Request, user_data: SignupRequest, session: AsyncSessi
 
 
 @user_router.post("/login", status_code=201, response_model=SigninResponse)
-@limiter.limit("10/minute")  # 10 login attempts per minute per IP
+@limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def login(request: Request, user_credentials: LoginRequest, session: AsyncSession = Depends(get_session)):
     """Authenticate a user and return access and refresh tokens. <br />
 

@@ -39,6 +39,11 @@ class Settings(BaseSettings):
         description="The port at which the fastapi (uvicorn) backend runs"
     )
 
+    rate_limit_unprotected_routes: str = Field(
+        default="10",
+        description="How many requests a client (ip address) can make against the same API route per minute on unprotected routes"
+    )
+
     # --- Environment Settings ---
     backend_version: str = Field(
         default="0.0.1",
@@ -183,6 +188,20 @@ class Settings(BaseSettings):
                 f"invalid logging level {color(v)}. Must be one of: {color(', '.join(valid_levels))}"
             )
         return level
+
+    @field_validator("rate_limit_unprotected_routes")
+    @classmethod
+    def validate_rate_limit_unprotected_routes(cls, v: str) -> str:
+        """Validate rate_limit_unprotected_routes is a valid number > 0."""
+        try:
+            int_v = int(v)
+            if int_v < 1:
+                raise ValueError
+        except (ValueError, TypeError):
+            raise ValueError(
+                f"invalid rate limit {color(v)}. Must be a valid integer > 0."
+            )
+        return v
 
     # - Validation of Environment Settings -
     @field_validator("backend_version")

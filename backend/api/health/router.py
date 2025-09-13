@@ -7,6 +7,7 @@ from core.health.service import HealthService
 from models.health.response import HealthCheckResponse
 from errors import HealthCheckError, HealthCheckDBError
 from database.session import get_session
+from config import config
 
 health_router = APIRouter()
 health_service = HealthService()
@@ -16,7 +17,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @health_router.get("", response_model=HealthCheckResponse)
-@limiter.limit("5/minute")  # 5 requests per minute per IP
+@limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def get_fastapi_version(request: Request) -> dict:
     """Check the FastAPI version <br />
 
@@ -35,7 +36,7 @@ async def get_fastapi_version(request: Request) -> dict:
 
 
 @health_router.get("/db", status_code=200)
-@limiter.limit("5/minute")  # 5 requests per minute per IP
+@limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def check_db_status(request: Request, session: AsyncSession = Depends(get_session)) -> dict:
     """Check if the DB connection is working <br />
 
