@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from models.test.request import TestRequest
 from models.test.response import TestResponse
@@ -19,7 +19,7 @@ write_user_me_write_role_all = PermissionChecker(
 role_admin = RoleChecker([])
 
 
-@test_router.post("/string-conversion", status_code=201, response_model=TestResponse)
+@test_router.post("/string-conversion", status_code=status.HTTP_201_CREATED, response_model=TestResponse)
 async def test_route(request: TestRequest):
     try:
         message = await service.convert_string(**request.model_dump())
@@ -29,7 +29,7 @@ async def test_route(request: TestRequest):
     return TestResponse(message=message, conversion_type=request.conversion_type)
 
 
-@test_router.get("/test-read-user-all-permission", status_code=200)
+@test_router.get("/test-read-user-all-permission", status_code=status.HTTP_200_OK)
 async def test_user_role(_: bool = Depends(read_user_all)) -> JSONResponse:
     return JSONResponse(content={"message": "you will only see this if you have the 'read:user:all' permission."}, status_code=200)
 
@@ -39,6 +39,6 @@ async def test_user_role2(_: bool = Depends(write_user_me_write_role_all)) -> JS
     return JSONResponse(content={"message": "you will only see this if you have the 'write:user:me' & 'write:role:all' permission."}, status_code=200)
 
 
-@test_router.get("/test-admin-role", status_code=200)
+@test_router.get("/test-admin-role", status_code=status.HTTP_200_OK)
 async def test_admin_role(_: bool = Depends(role_admin)) -> JSONResponse:
     return JSONResponse(content={"message": "you will only see this if you have the 'admin' role."}, status_code=200)

@@ -83,11 +83,6 @@ class SigninResponse(SigninRefreshModelBase):
                          "Login successful"])
 
 
-class SignoutResponse(BaseModel):
-    message: str = Field(..., description="The status message about the logout", examples=[
-                         "Logout successful"])
-
-
 class RefreshResponse(SigninRefreshModelBase):
     message: str = Field(..., description="A status message about the login", examples=[
                          "Refresh successful"])

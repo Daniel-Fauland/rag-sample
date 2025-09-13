@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -7,7 +7,7 @@ from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from auth.auth import get_current_user
 from models.user.request import SignupRequest, LoginRequest, LogoutRequest
-from models.user.response import SignupResponse, SigninResponse, RefreshResponse, SignoutResponse, UserModel
+from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel
 from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken
 from auth.auth import AccessTokenBearer, RefreshTokenBearer
 from database.session import get_session
@@ -26,7 +26,7 @@ refresh_token_bearer = RefreshTokenBearer()
 limiter = Limiter(key_func=get_remote_address)
 
 
-@user_router.post("/signup", status_code=201, response_model=SignupResponse)
+@user_router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=SignupResponse)
 @limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def signup(request: Request, user_data: SignupRequest, session: AsyncSession = Depends(get_session)):
     """Create a new user in the database <br />
@@ -46,7 +46,7 @@ async def signup(request: Request, user_data: SignupRequest, session: AsyncSessi
     return SignupResponse(email=new_user.email, sucess=True)
 
 
-@user_router.post("/login", status_code=201, response_model=SigninResponse)
+@user_router.post("/login", status_code=status.HTTP_201_CREATED, response_model=SigninResponse)
 @limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def login(request: Request, user_credentials: LoginRequest, session: AsyncSession = Depends(get_session)):
     """Authenticate a user and return access and refresh tokens. <br />
@@ -88,7 +88,7 @@ async def login(request: Request, user_credentials: LoginRequest, session: Async
     )
 
 
-@user_router.get("/refresh", status_code=200, response_model=RefreshResponse)
+@user_router.get("/refresh", status_code=status.HTTP_200_OK, response_model=RefreshResponse)
 async def get_new_refresh_token(token_data: dict = Depends(refresh_token_bearer), session: AsyncSession = Depends(get_session)):
     """Refresh the user's access and refresh tokens by providing a valid refresh token. <br />
 
@@ -130,7 +130,7 @@ async def get_new_refresh_token(token_data: dict = Depends(refresh_token_bearer)
     )
 
 
-@user_router.post("/logout", status_code=200, response_model=SignoutResponse)
+@user_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     request: LogoutRequest,
     token_data_access: dict = Depends(access_token_bearer),
@@ -174,12 +174,8 @@ async def logout(
 
         await jwt_handler.add_jwt_to_blacklist(token_data=refresh_token_data, redis_client=redis)
 
-    return SignoutResponse(
-        message="Signout successful",
-    )
 
-
-@user_router.get("/me", status_code=200, response_model=UserModel)
+@user_router.get("/me", status_code=status.HTTP_200_OK, response_model=UserModel)
 async def get_active_user(user: UserModel = Depends(get_current_user)):
     """Get the current logged in user and return the user data <br />
 

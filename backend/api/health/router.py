@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 from slowapi import Limiter
@@ -16,7 +16,7 @@ health_service = HealthService()
 limiter = Limiter(key_func=get_remote_address)
 
 
-@health_router.get("", response_model=HealthCheckResponse)
+@health_router.get("", status_code=status.HTTP_200_OK, response_model=HealthCheckResponse)
 @limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def get_fastapi_version(request: Request) -> dict:
     """Check the FastAPI version <br />
@@ -35,7 +35,7 @@ async def get_fastapi_version(request: Request) -> dict:
     return response
 
 
-@health_router.get("/db", status_code=200)
+@health_router.get("/db", status_code=status.HTTP_200_OK)
 @limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def check_db_status(request: Request, session: AsyncSession = Depends(get_session)) -> dict:
     """Check if the DB connection is working <br />
