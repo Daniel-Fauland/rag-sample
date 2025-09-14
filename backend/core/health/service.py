@@ -43,7 +43,7 @@ class HealthService:
 
             # Get the first row - session.exec() returns a Result object
             row = db_result.first()
-            return {"result": "success",
+            return {"status": "healthy",
                     "current_database": row.database,
                     "current_user": row.user}
         except Exception as e:

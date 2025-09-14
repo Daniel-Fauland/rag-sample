@@ -2,6 +2,7 @@ import pytest
 from httpx import AsyncClient
 from httpx._transports.asgi import ASGITransport
 from main import app
+from config import config
 
 
 @pytest.mark.asyncio
@@ -10,7 +11,7 @@ async def test_health_check_successful():
     # Use ASGITransport explicitly
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/health/")
+        response = await client.get("/health")
 
     # Assertions
     assert response.status_code == 200
@@ -22,6 +23,20 @@ async def test_health_check_successful():
     assert len(data["fastapi_version"]) > 1
 
 
-# @pytest.mark.asyncio
-# async def test_another_route():
-#     """Test another route"""
+@pytest.mark.asyncio
+async def test_health_check_db_successful():
+    """Test health check db successful"""
+    # Use ASGITransport explicitly
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/health-db")
+
+    # Assertions
+    assert response.status_code == 200
+    data = response.json()
+    assert "status" in data
+    assert "current_database" in data
+    assert "current_user" in data
+    assert data["status"] == "healthy"
+    assert data["current_database"] == config.db_name
+    assert data["current_user"] == config.db_user

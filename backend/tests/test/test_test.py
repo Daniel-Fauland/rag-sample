@@ -21,7 +21,7 @@ async def test_check_string_conversion_invalid_input():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 422
@@ -43,7 +43,7 @@ async def test_check_string_conversion_empty_string():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 201
@@ -68,7 +68,7 @@ async def test_check_string_conversion_lower_successful():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 201
@@ -93,7 +93,7 @@ async def test_check_string_conversion_upper_successful():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 201
@@ -118,7 +118,7 @@ async def test_check_string_conversion_camelcase_successful():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 201
@@ -143,7 +143,7 @@ async def test_check_string_conversion_pascalcase_successful():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 201
@@ -168,7 +168,7 @@ async def test_check_string_conversion_snakecase_successful():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 201
@@ -193,7 +193,7 @@ async def test_check_string_conversion_kebabcase_successful():
             "conversion_type": payload_conversion_type,
         }
         # Perform POST request
-        response = await client.post("/test/", json=payload)
+        response = await client.post("/string-conversion", json=payload)
 
     # Assertions
     assert response.status_code == 201
