@@ -62,10 +62,20 @@ def upgrade() -> None:
     if user_role_result:
         user_role_id = user_role_result[0]
 
-        # Get all read permissions
-        read_permissions = op.get_bind().execute(
+        # Get all read:<resource>:me permissions
+        read_permissions_me = op.get_bind().execute(
             sa.select(permissions_table.c.id).where(
-                permissions_table.c.type == 'read'
+                permissions_table.c.type == 'read',
+                permissions_table.c.context == 'me'
+            )
+        ).fetchall()
+
+        # Get read:<resource>:all permissions for resource: user, role, permission
+        read_permissions_all = op.get_bind().execute(
+            sa.select(permissions_table.c.id).where(
+                permissions_table.c.type == 'read',
+                permissions_table.c.context == 'all',
+                permissions_table.c.resource.in_(['user', 'role', 'permission'])
             )
         ).fetchall()
 
@@ -81,7 +91,7 @@ def upgrade() -> None:
         ).fetchall()
 
         # Combine all permissions for user role
-        all_user_permissions = read_permissions + user_me_permissions
+        all_user_permissions = read_permissions_me + read_permissions_all + user_me_permissions
 
         # Insert role-permission relationships
         for permission in all_user_permissions:
