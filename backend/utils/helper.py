@@ -90,15 +90,27 @@ class Utils():
         """Measure the time between a start_time and now add it to a list of dicts and return this list
 
         Args:
-            start_time (float): The start time using time.perf_counter()
+            start_time (float): The initial start time using time.perf_counter() (only needed for the first call)
             title (str): A name for the process you want to time
             history (list[dict], optional): An existing history of times. Defaults to [].
 
         Returns:
             list[dict]: The updated history
         """
-        processing_time = round(time.perf_counter() - start_time, 2)
-        history.append({"Step": title, "Processing time": processing_time})
+        current_time = time.perf_counter()
+
+        if history:
+            # Calculate total time of all previous steps
+            total_previous_time = sum(
+                step["Processing time"] for step in history)
+            # Step duration = current elapsed time - previous total time
+            step_duration = round(
+                (current_time - start_time) - total_previous_time, 2)
+        else:
+            # First step: just calculate from start_time
+            step_duration = round(current_time - start_time, 2)
+
+        history.append({"Step": title, "Processing time": step_duration})
         return history
 
     @staticmethod
