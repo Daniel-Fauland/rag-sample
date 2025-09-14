@@ -23,7 +23,7 @@ def overwrite_env():
         env['PYTHONPATH'] = backend_dir
 
     if 'DB_NAME' in env:
-        env['DB_NAME'] = f"test_{env['PYTHONPATH']}"
+        env['DB_NAME'] = f"test_{env['DB_NAME']}"
     else:
         env['DB_NAME'] = "test_db"
     return env
@@ -43,9 +43,13 @@ async def drop_test_db(env):
         WHERE pg_stat_activity.datname = '{db_test_name}'
           AND pid <> pg_backend_pid();
         """)
-        # Drop the test database
-        await conn.execute(f"DROP DATABASE IF EXISTS {db_test_name};")
-        print(f"Test database '{db_test_name}' dropped successfully.")
+        db_exists = await conn.fetchval(
+            "SELECT 1 FROM pg_database WHERE datname = $1", db_test_name
+        )
+        if db_exists:
+            # Drop again to ensure it's gone, and print only if it existed
+            await conn.execute(f"DROP DATABASE IF EXISTS {db_test_name};")
+            print(f"Test database '{db_test_name}' dropped successfully.")
     finally:
         await conn.close()
 
