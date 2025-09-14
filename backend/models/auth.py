@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class Type(str, Enum):
@@ -10,15 +10,6 @@ class Type(str, Enum):
     delete = "delete"
 
 
-class Resource(str, Enum):
-    # The affected resource
-    admin = "admin"
-    user = "user"
-    roles = "role"
-    permissions = "permission"
-    # add more as needed
-
-
 class Context(str, Enum):
     # The context/scope
     me = "me"
@@ -27,5 +18,11 @@ class Context(str, Enum):
 
 class Permission(BaseModel):
     type: Type
-    resource: Resource
+    resource: str = Field(...,
+                          description="The resource the permission is for")
     context: Context = Context.all
+
+    @field_validator('resource')
+    @classmethod
+    def resource_lower_case(cls, v: str) -> str:
+        return v.lower()

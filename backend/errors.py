@@ -75,6 +75,16 @@ class UserNotFound(FastAPIExceptions):
     pass
 
 
+class RoleNotFound(FastAPIExceptions):
+    """The provided role id does not exist in the database"""
+    pass
+
+
+class RoleAlreadyExists(FastAPIExceptions):
+    """A role with this name already exists in the database"""
+    pass
+
+
 class UserInvalidCredentials(FastAPIExceptions):
     """The provided email/password combination does not not match any database entries"""
     pass
@@ -265,5 +275,25 @@ def register_errors(app: FastAPI):
             detail={"message": "An internal server error occured",
                     "error_code": "113_internal_server_error",
                     "solution": "Contact the administrator for assistance"}
+        )
+    )
+
+    app.add_exception_handler(
+        RoleNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": "The role id provided does not exist in the database",
+                    "error_code": "114_role_not_found",
+                    "solution": "Provide a valid role id"}
+        )
+    )
+
+    app.add_exception_handler(
+        RoleAlreadyExists,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "A role with this name already exists in the database",
+                    "error_code": "115_role_already_exists",
+                    "solution": "Use a different role name"}
         )
     )

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from models.test.request import TestRequest
 from models.test.response import TestResponse
-from models.auth import Permission
+from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker, RoleChecker
 from core.test.service import TestService
 from errors import XValueError
@@ -12,10 +12,10 @@ service = TestService()
 
 # Permissions
 read_user_all = PermissionChecker(
-    [Permission(type="read", resource="user", context="all")])
+    [Permission(type=Type.read, resource="user", context=Context.all)])
 create_user_me_create_role_all = PermissionChecker(
-    [Permission(type="create", resource="user", context="me"),
-     Permission(type="create", resource="role", context="all")])
+    [Permission(type=Type.create, resource="user", context=Context.me),
+     Permission(type=Type.create, resource="role", context=Context.all)])
 role_admin = RoleChecker([])
 
 

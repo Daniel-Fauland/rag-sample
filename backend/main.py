@@ -11,6 +11,7 @@ from utils.logging import logger
 from utils.life_span import LifeSpanService
 from api.test.router import test_router
 from api.user.router import user_router
+from api.role.router import role_router
 from api.health.router import health_router
 
 
@@ -53,6 +54,7 @@ register_errors(app)
 # Include routers
 app.include_router(test_router, tags=["Test"])
 app.include_router(user_router, prefix="/user", tags=["User"])
+app.include_router(role_router, prefix="/role", tags=["Role"])
 app.include_router(health_router, prefix="/health", tags=["Health"])
 
 

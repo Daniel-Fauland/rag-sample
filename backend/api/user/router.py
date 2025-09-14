@@ -9,7 +9,7 @@ from auth.jwt import JWTHandler
 from auth.auth import get_current_user, check_ownership_permissions
 from models.user.request import SignupRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
 from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
-from models.auth import Permission
+from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
 from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID, XValueError
 from auth.auth import AccessTokenBearer, RefreshTokenBearer
@@ -30,9 +30,9 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Permissions
 read_user_me = PermissionChecker(
-    [Permission(type="read", resource="user", context="me")])
+    [Permission(type=Type.read, resource="user", context=Context.me)])
 read_user_all = PermissionChecker(
-    [Permission(type="read", resource="user", context="all")])
+    [Permission(type=Type.read, resource="user", context=Context.all)])
 
 
 @user_router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=SignupResponse)

@@ -109,10 +109,10 @@ class PermissionChecker():
         missing_permissions = []
         for required_perm in self.required_permissions:
             perm_tuple = (required_perm.type.value,
-                          required_perm.resource.value, required_perm.context.value)
+                          required_perm.resource, required_perm.context.value)
             if perm_tuple not in user_permissions:
                 missing_permissions.append(
-                    f"{required_perm.type.value}:{required_perm.resource.value}:{required_perm.context.value}")
+                    f"{required_perm.type.value}:{required_perm.resource}:{required_perm.context.value}")
         if missing_permissions:
             raise InsufficientPermissions(missing_permissions)
         return True
