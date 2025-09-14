@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -106,6 +106,9 @@ class ServiceHelper():
                 if hasattr(user, field) and value is not None:
                     setattr(user, field, value)
 
+            # Automatically update the modified_at timestamp
+            user.modified_at = datetime.now(timezone.utc)
+
             await session.commit()
             await session.refresh(user)
             return user
@@ -163,6 +166,7 @@ class ServiceHelper():
         try:
             # Update password
             user.password_hash = new_password_hash
+            user.modified_at = datetime.now(timezone.utc)
             await session.commit()
             await session.refresh(user)
             return True
