@@ -101,6 +101,11 @@ class UserInvalidPassword(FastAPIExceptions):
 class InternalServerError(FastAPIExceptions):
     """An internal server error occured"""
 
+    def __init__(self, message: str = None):
+        if message is not None:
+            self.message = f"An internal server error occured at method: {message}"
+        super().__init__(self.message)
+
 
 def create_exception_handler(status_code: int, detail: str) -> Callable[[Request, Exception], JSONResponse]:
     async def exception_handler(request: Request, exc: FastAPIExceptions):

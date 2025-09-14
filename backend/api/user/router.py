@@ -11,7 +11,7 @@ from models.user.request import SignupRequest, LoginRequest, LogoutRequest, User
 from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
 from models.auth import Permission
 from auth.auth import PermissionChecker
-from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID, XValueError, InternalServerError
+from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID, XValueError
 from auth.auth import AccessTokenBearer, RefreshTokenBearer
 from database.session import get_session
 from database.redis import redis_manager
@@ -89,11 +89,11 @@ async def login(request: Request, user_credentials: LoginRequest, session: Async
     if not user.is_verified:
         raise UserNotVerified
 
-    access_token, refresh_token = await service.create_access_tokens(user)
+    tokens = await service.create_access_tokens(user)
     return SigninResponse(
         message="Login successful",
-        access_token=access_token,
-        refresh_token=refresh_token,
+        access_token=tokens["access_token"],
+        refresh_token=tokens["refresh_token"],
     )
 
 
@@ -126,7 +126,7 @@ async def get_new_refresh_token(token_data: dict = Depends(refresh_token_bearer)
     if not user.is_verified:
         raise UserNotVerified
 
-    access_token, refresh_token = await service.create_access_tokens(user)
+    tokens = await service.create_access_tokens(user)
 
     # Invalidate old refresh token by adding it to redis blacklist
     redis = redis_manager.get_client()
@@ -134,8 +134,8 @@ async def get_new_refresh_token(token_data: dict = Depends(refresh_token_bearer)
 
     return SigninResponse(
         message="Refresh successful",
-        access_token=access_token,
-        refresh_token=refresh_token,
+        access_token=tokens["access_token"],
+        refresh_token=tokens["refresh_token"],
     )
 
 
@@ -196,14 +196,12 @@ async def update_active_user_password(password_data: PasswordUpdateRequest,
         201 Created: Password successfully updated <br />
     """
     # Update password using the current user's id
-    password_updated = await service.update_user_password(
+    _ = await service.update_user_password(
         user=current_user,
         old_password=password_data.old_password,
         new_password=password_data.new_password,
         session=session
     )
-    if not password_updated:
-        raise InternalServerError
     return PasswordUpdateResponse(message="Password changed successfully")
 
 

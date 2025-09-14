@@ -56,7 +56,6 @@ This sample provides a FastAPI backend with the following features:
 - [x] IP based rate limiting on individual api routes. See [api/health/router.py](./backend/api/health/router.py)
 
 > TODO: Integration test using test db <br/>
-> TODO: Additional user routes: Get user(s), update user, delete user, <br/>
 > TODO: Additional roles routes: Get role(s), update role, delete roles <br/>
 > TODO: Mock KeyVault env values <br />
 > TODO: Setup shell script for postgres, redis and ALL (pg, redis & be) or maybe MAKEFILE?
