@@ -186,6 +186,80 @@ def upgrade() -> None:
             'is_active': True,
             'created_at': current_timestamp,
             'modified_at': current_timestamp,
+        },
+        # Role assignment permissions
+        {
+            'type': 'read',
+            'resource': 'role_assignment',
+            'context': 'me',
+            'description': 'Read own role assignments',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
+        },
+        {
+            'type': 'read',
+            'resource': 'role_assignment',
+            'context': 'all',
+            'description': 'Read any role assignment',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
+        },
+        {
+            'type': 'create',
+            'resource': 'role_assignment',
+            'context': 'all',
+            'description': 'Create any role assignment',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
+        },
+        {
+            'type': 'delete',
+            'resource': 'role_assignment',
+            'context': 'all',
+            'description': 'Delete any role assignment',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
+        },
+        # Permission assignment permissions
+        {
+            'type': 'read',
+            'resource': 'permission_assignment',
+            'context': 'me',
+            'description': 'Read own permission assignments',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
+        },
+        {
+            'type': 'read',
+            'resource': 'permission_assignment',
+            'context': 'all',
+            'description': 'Read any permission assignment',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
+        },
+        {
+            'type': 'create',
+            'resource': 'permission_assignment',
+            'context': 'all',
+            'description': 'Create any permission assignment',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
+        },
+        {
+            'type': 'delete',
+            'resource': 'permission_assignment',
+            'context': 'all',
+            'description': 'Delete any permission assignment',
+            'is_active': True,
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         }
     ]
 
@@ -244,7 +318,17 @@ def downgrade() -> None:
         {'type': 'read', 'resource': 'permission', 'context': 'all'},
         {'type': 'create', 'resource': 'permission', 'context': 'all'},
         {'type': 'update', 'resource': 'permission', 'context': 'all'},
-        {'type': 'delete', 'resource': 'permission', 'context': 'all'}
+        {'type': 'delete', 'resource': 'permission', 'context': 'all'},
+        # Role assignment permissions
+        {'type': 'read', 'resource': 'role_assignment', 'context': 'me'},
+        {'type': 'read', 'resource': 'role_assignment', 'context': 'all'},
+        {'type': 'create', 'resource': 'role_assignment', 'context': 'all'},
+        {'type': 'delete', 'resource': 'role_assignment', 'context': 'all'},
+        # Permission assignment permissions
+        {'type': 'read', 'resource': 'permission_assignment', 'context': 'me'},
+        {'type': 'read', 'resource': 'permission_assignment', 'context': 'all'},
+        {'type': 'create', 'resource': 'permission_assignment', 'context': 'all'},
+        {'type': 'delete', 'resource': 'permission_assignment', 'context': 'all'}
     ]
 
     # Delete all permissions that were inserted
