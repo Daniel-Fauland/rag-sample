@@ -68,7 +68,7 @@ class UserModel(UserModelBase):
 class SignupResponse(BaseModel):
     email: str = Field(..., description="The email of the newly created user", examples=[
                        "john.doe@example.com"])
-    sucess: bool = Field(..., description="Wheter the user was successfully created", examples=[
+    success: bool = Field(..., description="Wheter the user was successfully created", examples=[
         True])
 
 

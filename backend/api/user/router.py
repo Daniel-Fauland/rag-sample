@@ -52,7 +52,7 @@ async def signup(request: Request, user_data: SignupRequest, session: AsyncSessi
         raise UserEmailExists()
 
     new_user = await service.create_user(user_data, session)
-    return SignupResponse(email=new_user.email, sucess=True)
+    return SignupResponse(email=new_user.email, success=True)
 
 
 @user_router.post("/login", status_code=status.HTTP_201_CREATED, response_model=SigninResponse)
