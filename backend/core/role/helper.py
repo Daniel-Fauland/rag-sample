@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -61,6 +62,7 @@ class RoleServiceHelper:
             for field, value in update_data.items():
                 if hasattr(role, field) and value is not None:
                     setattr(role, field, value)
+            role.modified_at = datetime.now(timezone.utc)
 
             await session.commit()
             await session.refresh(role)

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -65,6 +66,7 @@ class PermissionServiceHelper:
             for field, value in update_data.items():
                 if hasattr(permission, field) and value is not None:
                     setattr(permission, field, value)
+            permission.modified_at = datetime.now(timezone.utc)
 
             await session.commit()
             await session.refresh(permission)
