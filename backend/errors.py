@@ -85,6 +85,16 @@ class RoleAlreadyExists(FastAPIExceptions):
     pass
 
 
+class PermissionNotFound(FastAPIExceptions):
+    """The provided permission id does not exist in the database"""
+    pass
+
+
+class PermissionAlreadyExists(FastAPIExceptions):
+    """A permission with this type, resource, and context combination already exists in the database"""
+    pass
+
+
 class UserInvalidCredentials(FastAPIExceptions):
     """The provided email/password combination does not not match any database entries"""
     pass
@@ -295,5 +305,25 @@ def register_errors(app: FastAPI):
             detail={"message": "A role with this name already exists in the database",
                     "error_code": "115_role_already_exists",
                     "solution": "Use a different role name"}
+        )
+    )
+
+    app.add_exception_handler(
+        PermissionNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": "The permission id provided does not exist in the database",
+                    "error_code": "116_permission_not_found",
+                    "solution": "Provide a valid permission id"}
+        )
+    )
+
+    app.add_exception_handler(
+        PermissionAlreadyExists,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "A permission with this type, resource, and context combination already exists",
+                    "error_code": "117_permission_already_exists",
+                    "solution": "Use a different combination of type, resource, and context"}
         )
     )
