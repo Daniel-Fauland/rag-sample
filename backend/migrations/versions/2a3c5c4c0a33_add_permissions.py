@@ -31,6 +31,7 @@ def upgrade() -> None:
                     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
                     sa.Column('is_active', sa.Boolean(), nullable=False),
                     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), nullable=True),
+                    sa.Column('modified_at', postgresql.TIMESTAMP(timezone=True), nullable=True),
                     sa.PrimaryKeyConstraint('id'))
     op.create_index(op.f('ix_permissions_resource'), 'permissions', ['resource'], unique=False)
 

@@ -23,6 +23,9 @@ class Role(SQLModel, table=True):
     created_at: datetime = Field(sa_column=Column(
         pg.TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
     ))
+    modified_at: datetime = Field(sa_column=Column(
+        pg.TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
+    ))
     # Many-to-many relationship with users
     users: List["User"] = Relationship(
         back_populates="roles", link_model=UserRole

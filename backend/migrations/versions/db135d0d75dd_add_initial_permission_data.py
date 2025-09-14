@@ -34,7 +34,8 @@ def upgrade() -> None:
         sa.column('context', sa.String),
         sa.column('description', sa.String),
         sa.column('is_active', sa.Boolean),
-        sa.column('created_at', sa.DateTime)
+        sa.column('created_at', sa.DateTime),
+        sa.column('modified_at', sa.DateTime)
     )
 
     # Define all permissions to insert
@@ -46,7 +47,8 @@ def upgrade() -> None:
             'context': 'me',
             'description': 'Read own user data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'create',
@@ -54,7 +56,8 @@ def upgrade() -> None:
             'context': 'me',
             'description': 'Create own user data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'update',
@@ -62,7 +65,8 @@ def upgrade() -> None:
             'context': 'me',
             'description': 'Update own user data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'delete',
@@ -70,7 +74,8 @@ def upgrade() -> None:
             'context': 'me',
             'description': 'Delete own user data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'read',
@@ -78,7 +83,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Read all users data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'create',
@@ -86,7 +92,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Create any user data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'update',
@@ -94,7 +101,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Update any user data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'delete',
@@ -102,7 +110,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Delete any user data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         # Role permissions (only all context makes sense)
         {
@@ -111,7 +120,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Read all roles data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'create',
@@ -119,7 +129,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Create any role data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'update',
@@ -127,7 +138,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Update any role data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'delete',
@@ -135,7 +147,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Delete any role data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         # Permission permissions (only all context makes sense)
         {
@@ -144,7 +157,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Read all permissions data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'create',
@@ -152,7 +166,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Create any permission data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'update',
@@ -160,7 +175,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Update any permission data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         },
         {
             'type': 'delete',
@@ -168,7 +184,8 @@ def upgrade() -> None:
             'context': 'all',
             'description': 'Delete any permission data',
             'is_active': True,
-            'created_at': current_timestamp
+            'created_at': current_timestamp,
+            'modified_at': current_timestamp,
         }
     ]
 
@@ -203,7 +220,8 @@ def downgrade() -> None:
         sa.column('context', sa.String),
         sa.column('description', sa.String),
         sa.column('is_active', sa.Boolean),
-        sa.column('created_at', sa.DateTime)
+        sa.column('created_at', sa.DateTime),
+        sa.column('modified_at', sa.DateTime)
     )
 
     # List of all permissions that were inserted (type, resource, context combinations)

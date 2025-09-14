@@ -45,15 +45,15 @@ def upgrade() -> None:
 
     # Insert Role "admin" if it does not exist
     op.execute(f"""
-        INSERT INTO roles (name, description, is_active, created_at)
-        SELECT 'admin', 'Administrator with full system access', TRUE, '{current_timestamp}'
+        INSERT INTO roles (name, description, is_active, created_at, modified_at)
+        SELECT 'admin', 'Administrator with full system access', TRUE, '{current_timestamp}', '{current_timestamp}'
         WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'admin')
     """)
 
     # Insert Role "user" if it does not exist
     op.execute(f"""
-        INSERT INTO roles (name, description, is_active, created_at)
-        SELECT 'user', 'Default role with limited permissions', TRUE, '{current_timestamp}'
+        INSERT INTO roles (name, description, is_active, created_at, modified_at)
+        SELECT 'user', 'Default role with limited permissions', TRUE, '{current_timestamp}', '{current_timestamp}'
         WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'user')
     """)
 

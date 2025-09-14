@@ -23,6 +23,9 @@ class Permission(SQLModel, table=True):
     created_at: datetime = Field(sa_column=Column(
         pg.TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
     ))
+    modified_at: datetime = Field(sa_column=Column(
+        pg.TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
+    ))
 
     # Many-to-many relationship with users
     roles: List["Role"] = Relationship(
