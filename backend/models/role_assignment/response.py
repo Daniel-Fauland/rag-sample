@@ -19,10 +19,3 @@ class RoleAssignmentCreateResponse(BaseModel):
                           True])
     message: str = Field(..., description="Status message",
                          examples=["Role assigned successfully"])
-
-
-class RoleAssignmentDeleteResponse(BaseModel):
-    success: bool = Field(..., description="Whether the removal was successful", examples=[
-                          True])
-    message: str = Field(..., description="Status message", examples=[
-                         "Role assignment removed successfully"])

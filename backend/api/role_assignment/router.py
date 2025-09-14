@@ -5,7 +5,7 @@ from core.role_assignment.service import RoleAssignmentService
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker, get_current_user, check_ownership_permissions
 from models.role_assignment.request import RoleAssignmentCreateRequest, RoleAssignmentDeleteRequest
-from models.role_assignment.response import RoleAssignmentModel, RoleAssignmentCreateResponse, RoleAssignmentDeleteResponse
+from models.role_assignment.response import RoleAssignmentModel, RoleAssignmentCreateResponse
 from models.user.response import UserModel
 from database.session import get_session
 from errors import RoleAssignmentNotFound
@@ -95,7 +95,7 @@ async def create_role_assignment(assignment_data: RoleAssignmentCreateRequest,
     )
 
 
-@role_assignment_router.delete("", status_code=status.HTTP_200_OK, response_model=RoleAssignmentDeleteResponse)
+@role_assignment_router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_role_assignment(assignment_data: RoleAssignmentDeleteRequest,
                                  session: AsyncSession = Depends(get_session),
                                  _: bool = Depends(delete_role_assignment_all)):
@@ -105,14 +105,9 @@ async def delete_role_assignment(assignment_data: RoleAssignmentDeleteRequest,
         assignment_data (RoleAssignmentDeleteRequest): The user ID and role ID to unassign <br />
 
     Returns: <br />
-        RoleAssignmentDeleteResponse: Success status and message <br />
+        204 No Content: Role assignment successfully removed <br />
     """
     assignment_deleted = await service.delete_role_assignment(assignment_data=assignment_data, session=session)
 
     if not assignment_deleted:
         raise RoleAssignmentNotFound()
-
-    return RoleAssignmentDeleteResponse(
-        success=True,
-        message="Role assignment removed successfully"
-    )

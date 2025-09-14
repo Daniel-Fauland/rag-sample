@@ -105,6 +105,16 @@ class RoleAssignmentAlreadyExists(FastAPIExceptions):
     pass
 
 
+class PermissionAssignmentNotFound(FastAPIExceptions):
+    """The specified permission assignment does not exist"""
+    pass
+
+
+class PermissionAssignmentAlreadyExists(FastAPIExceptions):
+    """A permission assignment already exists for this role and permission combination"""
+    pass
+
+
 class UserInvalidCredentials(FastAPIExceptions):
     """The provided email/password combination does not not match any database entries"""
     pass
@@ -355,5 +365,25 @@ def register_errors(app: FastAPI):
             detail={"message": "A role assignment already exists for this user and role combination",
                     "error_code": "119_role_assignment_already_exists",
                     "solution": "The user already has this role assigned"}
+        )
+    )
+
+    app.add_exception_handler(
+        PermissionAssignmentNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": "The specified permission assignment does not exist",
+                    "error_code": "122_permission_assignment_not_found",
+                    "solution": "Verify the role and permission IDs are correct"}
+        )
+    )
+
+    app.add_exception_handler(
+        PermissionAssignmentAlreadyExists,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "A permission assignment already exists for this role and permission combination",
+                    "error_code": "123_permission_assignment_already_exists",
+                    "solution": "The role already has this permission assigned"}
         )
     )

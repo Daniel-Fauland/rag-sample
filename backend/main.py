@@ -14,6 +14,7 @@ from api.user.router import user_router
 from api.role.router import role_router
 from api.permission.router import permission_router
 from api.role_assignment.router import role_assignment_router
+from api.permission_assignment.router import permission_assignment_router
 from api.health.router import health_router
 
 
@@ -61,6 +62,8 @@ app.include_router(permission_router, prefix="/permission",
                    tags=["Permission"])
 app.include_router(role_assignment_router,
                    prefix="/role-assignment", tags=["Role Assignment"])
+app.include_router(permission_assignment_router,
+                   prefix="/permission-assignment", tags=["Permission Assignment"])
 app.include_router(health_router, prefix="/health", tags=["Health"])
 
 
