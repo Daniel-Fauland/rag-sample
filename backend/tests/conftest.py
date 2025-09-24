@@ -1,19 +1,9 @@
-import asyncio
 import pytest
 import pytest_asyncio
 import httpx
 from httpx._transports.asgi import ASGITransport
 from main import app
 from database.session import get_session, get_test_session
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create and manage a single event loop for all tests to prevent asyncpg loop conflicts."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(scope="session", autouse=True)
