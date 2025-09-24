@@ -26,6 +26,8 @@ def overwrite_env():
         env['DB_NAME'] = f"test_{env['DB_NAME']}"
     else:
         env['DB_NAME'] = "test_db"
+
+    env['LOGGING_LEVEL'] = "WARNING"
     return env
 
 

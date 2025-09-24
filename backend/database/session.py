@@ -48,6 +48,25 @@ async def get_session() -> AsyncSession:  # type: ignore
         yield session
 
 
+async def get_test_session() -> AsyncSession:  # type: ignore
+    """Get a database session specifically for tests.
+
+    This version disposes the engine after each session to prevent
+    asyncio loop conflicts in tests, but should NOT be used in production.
+    """
+    Session = sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autocommit=False,
+        autoflush=False
+    )
+    async with Session() as session:
+        yield session
+    # Only dispose in test environment to prevent loop conflicts
+    await engine.dispose()
+
+
 async def get_session_direct() -> AsyncSession:
     """Get a database session directly without using dependency injection.
 
