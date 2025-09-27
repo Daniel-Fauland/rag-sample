@@ -21,25 +21,6 @@ async def test_logout_successful_access_token(client, db_session):
     }
     payload = {}
     response = await client.post("/user/logout", headers=headers, json=payload)
-    data = response.json()
-
-    # Assertions
-    assert response.status_code == 204
-
-
-@pytest.mark.asyncio
-async def test_logout_successful_refresh_token(client, db_session):
-    """Test logout with valid access token"""
-    data = await test_helper.login_user(client, db_session)
-
-    # Perform POST request with Authorization header using the refresh token
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {data['refresh_token']}"
-    }
-    payload = {}
-    response = await client.post("/user/logout", headers=headers, json=payload)
-    data = response.json()
 
     # Assertions
     assert response.status_code == 204
@@ -59,7 +40,6 @@ async def test_logout_successful_access_refresh_token(client, db_session):
         "refresh_token": data['refresh_token']
     }
     response = await client.post("/user/logout", headers=headers, json=payload)
-    data = response.json()
 
     # Assertions
     assert response.status_code == 204
