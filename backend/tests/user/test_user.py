@@ -9,7 +9,7 @@ test_helper = TestHelper()
 async def test_get_all_users_successful_as_regular_user(client, db_session):
     """Test GET /user with regular user (has read:user:all permission by default)"""
     # Login as regular user - they have read:user:all permission by default
-    user_data = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
     # Create additional users to ensure there's data to return
     await test_helper.create_user_if_not_exists(client, db_session, payload={"email": "test_user2@example.com"})
@@ -46,7 +46,7 @@ async def test_get_all_users_successful_as_regular_user(client, db_session):
 async def test_get_all_users_with_permissions_successful_as_regular_user(client, db_session):
     """Test GET /user-with-permissions with regular user (has read:user:all permission)"""
     # Login as regular user
-    user_data = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
     # Create additional users to ensure there's data to return
     await test_helper.create_user_if_not_exists(client, db_session, payload={"email": "test_user2@example.com"})
@@ -94,7 +94,7 @@ async def test_get_all_users_with_permissions_successful_as_regular_user(client,
 async def test_get_all_users_insufficient_permissions_as_user_without_permissions(client, db_session):
     """Test GET /user fails with user that has no permissions"""
     # Create and login user with no permissions
-    user_data = await test_helper.login_user_with_type(client, db_session, "no_permissions", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "no_permissions", "user1")
 
     # Perform GET request with user that has no permissions
     headers = {
@@ -116,7 +116,7 @@ async def test_get_all_users_insufficient_permissions_as_user_without_permission
 async def test_get_all_users_with_permissions_insufficient_permissions_as_user_without_permissions(client, db_session):
     """Test GET /user-with-permissions fails with user that has no permissions"""
     # Create and login user with no permissions
-    user_data = await test_helper.login_user_with_type(client, db_session, "no_permissions", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "no_permissions", "user1")
 
     # Perform GET request with user that has no permissions
     headers = {
@@ -138,7 +138,7 @@ async def test_get_all_users_with_permissions_insufficient_permissions_as_user_w
 async def test_get_all_users_successful_as_admin_user(client, db_session):
     """Test GET /user with admin user (has all permissions)"""
     # Login as admin user
-    admin_data = await test_helper.login_user_with_type(client, db_session, "admin", "admin_1")
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", "admin_1")
 
     # Create regular users to ensure there's data to return
     await test_helper.create_user_if_not_exists(client, db_session)
@@ -172,7 +172,7 @@ async def test_get_all_users_successful_as_admin_user(client, db_session):
 async def test_get_all_users_with_ordering_parameters(client, db_session):
     """Test GET /user with query parameters for ordering"""
     # Login as regular user
-    user_data = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
     # Create multiple users to test ordering
     await test_helper.create_user_if_not_exists(client, db_session, payload={"email": "a_user@example.com"})
@@ -204,7 +204,7 @@ async def test_get_all_users_with_ordering_parameters(client, db_session):
 async def test_get_all_users_with_limit_parameter(client, db_session):
     """Test GET /user with limit parameter"""
     # Login as regular user
-    user_data = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
     # Create multiple users to test limit
     await test_helper.create_user_if_not_exists(client, db_session, payload={"email": "testuser2@example.com"})
@@ -232,7 +232,7 @@ async def test_get_all_users_with_limit_parameter(client, db_session):
 async def test_get_all_users_with_permissions_with_ordering_parameters(client, db_session):
     """Test GET /user-with-permissions with query parameters"""
     # Login as regular user
-    user_data = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
     # Create additional users
     await test_helper.create_user_if_not_exists(client, db_session, payload={"email": "testuser2@example.com"})
@@ -266,7 +266,7 @@ async def test_get_all_users_with_permissions_with_ordering_parameters(client, d
 async def test_get_all_users_empty_query_parameters(client, db_session):
     """Test GET /user with empty/None query parameters"""
     # Login as regular user
-    user_data = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
     # Test with empty parameters
     headers = {
@@ -287,7 +287,7 @@ async def test_get_all_users_empty_query_parameters(client, db_session):
 async def test_get_all_users_with_permissions_admin_user_role_structure(client, db_session):
     """Test that admin user has proper role and permission structure"""
     # Login as admin user
-    admin_data = await test_helper.login_user_with_type(client, db_session, "admin", "admin1")
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", "admin1")
 
     await test_helper.create_admin_user_if_not_exists(client, db_session, payload={"email": "admin2@example.com"})
 
@@ -327,7 +327,7 @@ async def test_get_all_users_with_permissions_admin_user_role_structure(client, 
 async def test_get_all_users_regular_user_role_structure(client, db_session):
     """Test that regular user has proper role structure with read:user:all permission"""
     # Login as regular user
-    user_data = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
     await test_helper.create_user_if_not_exists(client, db_session, payload={"email": "test_user2@example.com"})
 
@@ -378,7 +378,7 @@ async def test_get_all_users_regular_user_role_structure(client, db_session):
 async def test_get_all_users_no_permissions_user_structure(client, db_session):
     """Test that user with no permissions has no roles"""
     # First create admin user to be able to see the no-permissions user
-    admin_data = await test_helper.login_user_with_type(client, db_session, "admin", "admin1")
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", "admin1")
 
     # Create user with no permissions
     await test_helper.create_user_no_permissions(client, db_session, payload={"email": "test_user1_no_permisssions@example.com"})

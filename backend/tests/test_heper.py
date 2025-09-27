@@ -106,4 +106,4 @@ class TestHelper():
         response = await client.post("/user/login", json=login_payload)
         data = response.json()
         assert response.status_code == 201
-        return data
+        return data, user
