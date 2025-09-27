@@ -28,6 +28,7 @@ def overwrite_env():
         env['DB_NAME'] = "test_db"
 
     env['LOGGING_LEVEL'] = "WARNING"
+    env['RATE_LIMIT_UNPROTECTED_ROUTES'] = "9999"
     return env
 
 

@@ -41,7 +41,7 @@ async def signup(request: Request, user_data: SignupRequest, session: AsyncSessi
     """Create a new user in the database <br />
 
     Args: <br />
-        request (SignupRequest): The user to sign up <br />
+        user_data (SignupRequest): The user to sign up <br />
 
     Returns: <br />
         SignupResponse: The users email and a success flag <br />

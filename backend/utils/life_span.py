@@ -16,7 +16,7 @@ class LifeSpanService():
         limiter = anyio.to_thread.current_default_thread_limiter()
         limiter.total_tokens = config.thread_pool
         logger.debug(f"Thread pool size is: {await color(limiter.total_tokens)}")
-        logger.debug(f"Numer of workers are: {await color(config.workers)}")
+        logger.debug(f"Number of workers are: {await color(config.workers)}")
         health_check = await health_service.check_FastAPI_version()
         logger.debug(health_check)
 
