@@ -25,9 +25,9 @@ def overwrite_env():
     if 'DB_NAME' in env:
         env['DB_NAME'] = f"test_{env['DB_NAME']}"
     else:
-        env['DB_NAME'] = "test_db"
+        env['DB_NAME'] = config.test_db_name
 
-    env['LOGGING_LEVEL'] = "WARNING"
+    env['LOGGING_LEVEL'] = config.test_logging_level
     env['RATE_LIMIT_UNPROTECTED_ROUTES'] = "9999"
     return env
 

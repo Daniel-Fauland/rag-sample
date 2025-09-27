@@ -175,9 +175,20 @@ class Settings(BaseSettings):
         description="The amount of workers the uvicorn server uses."
     )
 
+    # --- Test Settings ---
+    test_logging_level: str = Field(
+        default="ERROR",
+        description="Logging level for the application"
+    )
+
+    test_db_name: str = Field(
+        default="pg_test_db",
+        description="The name of your test database that you want to connect to"
+    )
+
     # --- Validation methods ---
     # - Validation of Basic Settings-
-    @field_validator("logging_level")
+    @field_validator("logging_level", "test_logging_level")
     @classmethod
     def validate_logging_level(cls, v: str) -> str:
         """Validate logging level is a valid Python logging level."""
@@ -214,20 +225,9 @@ class Settings(BaseSettings):
         return v
 
     # - Validation of Database Settings -
-    @field_validator("db_port")
+    @field_validator("db_port", "redis_port")
     @classmethod
     def validate_db_port(cls, v: int) -> int:
-        """Validate database port is a valid port number."""
-        if not isinstance(v, int) or v < 1 or v > 65535:
-            raise ValueError(
-                f"invalid port number {color(v)}. Must be an integer between 1 and 65535"
-            )
-        return v
-
-    # - Validation of Redis Settings -
-    @field_validator("redis_port")
-    @classmethod
-    def validate_redis_port(cls, v: int) -> int:
         """Validate database port is a valid port number."""
         if not isinstance(v, int) or v < 1 or v > 65535:
             raise ValueError(
