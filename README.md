@@ -110,7 +110,7 @@ You can install postgres locally on your machine or via Docker. Docker is straig
    ```
    export PG_VERSION="17.6"
    export PG_CONTAINER="db-be-pg"
-   export PG_NAME="backend"
+   export PG_NAME="postgres"
    export PG_USER="systemuser"
    export PG_PASSWORD="mysecretpassword"
    export PG_NETWORK_NAME="db-be-pg-network"
