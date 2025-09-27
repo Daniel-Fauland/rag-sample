@@ -1,6 +1,10 @@
 import uuid
 from sqlmodel import select
 from database.schemas.users import User
+from core.role_assignment.service import RoleAssignmentService
+from models.role_assignment.request import RoleAssignmentCreateRequest, RoleAssignmentDeleteRequest
+
+role_assignment_service = RoleAssignmentService()
 
 
 class TestHelper():
@@ -46,9 +50,55 @@ class TestHelper():
             user = result.first()
         return user
 
+    async def create_role_assignment_if_not_exists(self, db_session, user_id: uuid.UUID, role_id: int):
+        assignment_exists: bool = await role_assignment_service.role_assignment_exists(user_id=user_id, role_id=role_id, session=db_session)
+        if not assignment_exists:
+            role_assignment_data = RoleAssignmentCreateRequest(
+                user_id=user_id, role_id=role_id)
+            result = await role_assignment_service.create_role_assignment(assignment_data=role_assignment_data, session=db_session)
+            assert result
+
+    async def delete_role_assignment_if_exists(self, db_session, user_id: uuid.UUID, role_id: int):
+        role_assignment_data = RoleAssignmentDeleteRequest(
+            user_id=user_id, role_id=role_id)
+        _ = await role_assignment_service.delete_role_assignment(assignment_data=role_assignment_data, session=db_session)
+
+    async def create_admin_user_if_not_exists(self, client, db_session, payload=None):
+        user = await self.create_user_if_not_exists(client, db_session, payload)
+        await self.create_role_assignment_if_not_exists(
+            db_session=db_session, user_id=user.id, role_id=1)
+        return user
+
+    async def create_user_no_permissions(self, client, db_session, payload=None):
+        user = await self.create_user_if_not_exists(client, db_session, payload)
+        await self.delete_role_assignment_if_exists(
+            db_session=db_session, user_id=user.id, role_id=2)
+        return user
+
     async def login_user(self, client, db_session, payload=None):
         user = await self.create_user_if_not_exists(client, db_session, payload)
 
+        login_payload = {
+            "email": user.email,
+            "password": "Strongpassword123-"
+        }
+        response = await client.post("/user/login", json=login_payload)
+        data = response.json()
+        assert response.status_code == 201
+        return data
+
+    async def login_user_with_type(self, client, db_session, user_type="normal", email_suffix=""):
+        """Helper to create and login different types of users"""
+        email = f"test_{user_type}_{email_suffix}@example.com"
+
+        if user_type == "admin":
+            user = await self.create_admin_user_if_not_exists(client, db_session, payload={"email": email})
+        elif user_type == "no_permissions":
+            user = await self.create_user_no_permissions(client, db_session, payload={"email": email})
+        else:  # normal user
+            user = await self.create_user_if_not_exists(client, db_session, payload={"email": email})
+
+        # Login the user
         login_payload = {
             "email": user.email,
             "password": "Strongpassword123-"

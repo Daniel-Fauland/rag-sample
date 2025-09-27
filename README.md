@@ -191,7 +191,7 @@ Alembic is being used for DB migrations.
 In order to set up initial migrations for an async DB run the following command:
 
 ```
-alembic init -t async migrations
+uv run alembic init -t async migrations
 ```
 
 The command above will create a migrations folder with some files in it. In order to make it work with a postgres database and pickup schema changes automatically some changes in [migrations/env.py](./migrations/env.py) and [migrations/script.py.mako](./migrations/script.py.mako) were necessary. All changes are marked with `# EDITED` within those files.
@@ -199,7 +199,7 @@ The command above will create a migrations folder with some files in it. In orde
 Then you can run the following command to create the inital migration:
 
 ```
-alembic revision --autogenerate -m "Initial migration including all tables"
+uv run alembic revision --autogenerate -m "Initial migration including all tables"
 ```
 
 > [!Note]
@@ -212,45 +212,45 @@ alembic revision --autogenerate -m "Initial migration including all tables"
 If you want to create a new migration after changing a model [schema](./backend/database/schemas/) run the following command:
 
 ```
-alembic revision --autogenerate -m "put_message_here"
+uv run alembic revision --autogenerate -m "put_message_here"
 ```
 
 If you want to create a new migration for chaning some data (e.g. filling an existing table with initial data) without schema changes run this command instead:
 
 ```
-alembic revision -m "put_message_here"
+uv run alembic revision -m "put_message_here"
 ```
 
 If you want to apply a migration and upgrade to the latest revision simply run the following command:
 
 ```
-alembic upgrade head
+uv run alembic upgrade head
 ```
 
 If you want to undo all migrations and return to a state before the very first migration run:
 
 ```
-alembic downgrade base
+uv run alembic downgrade base
 ```
 
 You can check the history of all revisions by running:
 
 ```
-alembic history
+uv run alembic history
 ```
 
 You can upgrade | downgrade either to a specific revision id by typing:
 
 ```
-alembic upgrade <revision_id>
-alembic downgrade <revision_id>
+uv run alembic upgrade <revision_id>
+uv run alembic downgrade <revision_id>
 ```
 
 Or by upgrade | downgrade by a specific number of migrations:
 
 ```
-alembic upgrade -2
-alembic downgrade -2
+uv run alembic upgrade -2
+uv run alembic downgrade -2
 ```
 
 > [!Note]
