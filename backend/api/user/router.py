@@ -35,7 +35,7 @@ read_user_all = PermissionChecker(
     [Permission(type=Type.read, resource="user", context=Context.all)])
 
 
-@user_router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=SignupResponse)
+@user_router.post("", status_code=status.HTTP_201_CREATED, response_model=SignupResponse)
 @limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
 async def signup(request: Request, user_data: SignupRequest, session: AsyncSession = Depends(get_session)):
     """Create a new user in the database <br />

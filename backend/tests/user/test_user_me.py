@@ -1,5 +1,5 @@
 import pytest
-from tests.test_heper import TestHelper
+from tests.test_helper import TestHelper
 from auth.jwt import JWTHandler
 from core.user.service import UserService
 
@@ -19,7 +19,7 @@ async def test_me_successful_with_valid_access_token(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {data['access_token']}"
     }
-    response = await client.get("/user/me", headers=headers)
+    response = await client.get("/users/me", headers=headers)
     user_data = response.json()
 
     # Assertions
@@ -46,7 +46,7 @@ async def test_me_with_invalid_access_token(client, db_session):
         "accept": "application/json",
         "Authorization": "Bearer invalid_token_here"
     }
-    response = await client.get("/user/me", headers=headers)
+    response = await client.get("/users/me", headers=headers)
     data = response.json()
 
     # Assertions
@@ -67,7 +67,7 @@ async def test_me_with_expired_access_token(client, db_session):
         "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiMDE5OThiYTUtNjUwMS03ZmEyLWE1N2MtNTc0NWJjNWE1NmI5Iiwicm9sZXMiOlt7ImlkIjoyLCJuYW1lIjoidXNlciIsImlzX2FjdGl2ZSI6dHJ1ZX1dfSwiZXhwIjoxNzU4OTg2NDMwLCJqdGkiOiIwMTk5OGJiNS0yZDY1LTczMDEtODdlMS00NzllZjU5ZjQyMDIiLCJyZWZyZXNoIjpmYWxzZX0.WqPAo4VStS2KCTkfXcuRs1ELsujlzHZFCZAz954LTGQ"  # noqa
     }
     # fmt: on
-    response = await client.get("/user/me", headers=headers)
+    response = await client.get("/users/me", headers=headers)
     data = response.json()
 
     # Assertions
@@ -88,7 +88,7 @@ async def test_me_with_refresh_token_instead_of_access_token(client, db_session)
         "accept": "application/json",
         "Authorization": f"Bearer {data['refresh_token']}"
     }
-    response = await client.get("/user/me", headers=headers)
+    response = await client.get("/users/me", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -106,7 +106,7 @@ async def test_me_without_authorization_header(client, db_session):
     headers = {
         "accept": "application/json"
     }
-    response = await client.get("/user/me", headers=headers)
+    response = await client.get("/users/me", headers=headers)
     data = response.json()
 
     # Assertions
@@ -125,7 +125,7 @@ async def test_me_with_malformed_authorization_header(client, db_session):
         "accept": "application/json",
         "Authorization": data['access_token']  # Missing "Bearer" prefix
     }
-    response = await client.get("/user/me", headers=headers)
+    response = await client.get("/users/me", headers=headers)
     data = response.json()
 
     # Assertions
@@ -144,7 +144,7 @@ async def test_me_user_roles_structure(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {data['access_token']}"
     }
-    response = await client.get("/user/me", headers=headers)
+    response = await client.get("/users/me", headers=headers)
     user_data = response.json()
 
     # Assertions

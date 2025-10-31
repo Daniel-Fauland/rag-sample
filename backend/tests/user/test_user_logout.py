@@ -1,5 +1,5 @@
 import pytest
-from tests.test_heper import TestHelper
+from tests.test_helper import TestHelper
 from auth.jwt import JWTHandler
 from core.user.service import UserService
 
@@ -20,7 +20,7 @@ async def test_logout_successful_access_token(client, db_session):
         "Authorization": f"Bearer {data['access_token']}"
     }
     payload = {}
-    response = await client.post("/user/logout", headers=headers, json=payload)
+    response = await client.post("/users/logout", headers=headers, json=payload)
 
     # Assertions
     assert response.status_code == 204
@@ -39,7 +39,7 @@ async def test_logout_successful_access_refresh_token(client, db_session):
     payload = {
         "refresh_token": data['refresh_token']
     }
-    response = await client.post("/user/logout", headers=headers, json=payload)
+    response = await client.post("/users/logout", headers=headers, json=payload)
 
     # Assertions
     assert response.status_code == 204
@@ -56,7 +56,7 @@ async def test_logout_expired_token(client, db_session):
     }
     # fmt: on
     payload = {}
-    response = await client.post("/user/logout", headers=headers, json=payload)
+    response = await client.post("/users/logout", headers=headers, json=payload)
     data = response.json()
 
     # Assertions

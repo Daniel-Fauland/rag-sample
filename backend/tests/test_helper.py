@@ -42,7 +42,7 @@ class TestHelper():
         user = result.first()
         if user is None:
             # Perform POST request
-            response = await client.post("/user/signup", json=payload)
+            response = await client.post("/users", json=payload)
             # Assertions
             assert response.status_code == 201
             statement = select(User).where(User.email == payload["email"])
@@ -82,7 +82,7 @@ class TestHelper():
             "email": user.email,
             "password": "Strongpassword123-"
         }
-        response = await client.post("/user/login", json=login_payload)
+        response = await client.post("/users/login", json=login_payload)
         data = response.json()
         assert response.status_code == 201
         return data
@@ -103,7 +103,7 @@ class TestHelper():
             "email": user.email,
             "password": "Strongpassword123-"
         }
-        response = await client.post("/user/login", json=login_payload)
+        response = await client.post("/users/login", json=login_payload)
         data = response.json()
         assert response.status_code == 201
         return data, user

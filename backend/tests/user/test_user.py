@@ -1,5 +1,5 @@
 import pytest
-from tests.test_heper import TestHelper
+from tests.test_helper import TestHelper
 
 
 test_helper = TestHelper()
@@ -20,7 +20,7 @@ async def test_get_all_users_successful_as_regular_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/user", headers=headers)
+    response = await client.get("/users", headers=headers)
     users_data = response.json()
 
     # Assertions
@@ -57,7 +57,7 @@ async def test_get_all_users_with_permissions_successful_as_regular_user(client,
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/user-with-permissions", headers=headers)
+    response = await client.get("/users-with-permissions", headers=headers)
     users_data = response.json()
 
     # Assertions
@@ -101,7 +101,7 @@ async def test_get_all_users_insufficient_permissions_as_user_without_permission
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/user", headers=headers)
+    response = await client.get("/users", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -123,7 +123,7 @@ async def test_get_all_users_with_permissions_insufficient_permissions_as_user_w
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/user-with-permissions", headers=headers)
+    response = await client.get("/users-with-permissions", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -148,7 +148,7 @@ async def test_get_all_users_successful_as_admin_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {admin_data['access_token']}"
     }
-    response = await client.get("/user", headers=headers)
+    response = await client.get("/users", headers=headers)
     users_data = response.json()
 
     # Assertions
@@ -187,7 +187,7 @@ async def test_get_all_users_with_ordering_parameters(client, db_session):
         "order_by_field": "id",
         "order_by_direction": "asc"
     }
-    response = await client.get("/user", headers=headers, params=params)
+    response = await client.get("/users", headers=headers, params=params)
     users_data = response.json()
 
     # Assertions
@@ -219,7 +219,7 @@ async def test_get_all_users_with_limit_parameter(client, db_session):
     params = {
         "limit": 2
     }
-    response = await client.get("/user", headers=headers, params=params)
+    response = await client.get("/users", headers=headers, params=params)
     users_data = response.json()
 
     # Assertions
@@ -248,7 +248,7 @@ async def test_get_all_users_with_permissions_with_ordering_parameters(client, d
         "order_by_direction": "desc",
         "limit": 10
     }
-    response = await client.get("/user-with-permissions", headers=headers, params=params)
+    response = await client.get("/users-with-permissions", headers=headers, params=params)
     users_data = response.json()
 
     # Assertions
@@ -277,7 +277,7 @@ async def test_get_all_users_empty_query_parameters(client, db_session):
         "order_by_field": "",
         "order_by_direction": ""
     }
-    response = await client.get("/user", headers=headers, params=params)
+    response = await client.get("/users", headers=headers, params=params)
 
     # Assertions - should still work with empty parameters
     assert response.status_code == 200
@@ -296,7 +296,7 @@ async def test_get_all_users_with_permissions_admin_user_role_structure(client, 
         "accept": "application/json",
         "Authorization": f"Bearer {admin_data['access_token']}"
     }
-    response = await client.get("/user-with-permissions", headers=headers)
+    response = await client.get("/users-with-permissions", headers=headers)
     users_data = response.json()
 
     # Find the admin user we created
@@ -336,7 +336,7 @@ async def test_get_all_users_regular_user_role_structure(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/user-with-permissions", headers=headers)
+    response = await client.get("/users-with-permissions", headers=headers)
     users_data = response.json()
 
     # Find the regular user we created
@@ -388,7 +388,7 @@ async def test_get_all_users_no_permissions_user_structure(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {admin_data['access_token']}"
     }
-    response = await client.get("/user-with-permissions", headers=headers)
+    response = await client.get("/users-with-permissions", headers=headers)
     users_data = response.json()
 
     # Find the no-permissions user

@@ -1,5 +1,5 @@
 import pytest
-from tests.test_heper import TestHelper
+from tests.test_helper import TestHelper
 from auth.jwt import JWTHandler
 from core.user.service import UserService
 
@@ -19,7 +19,7 @@ async def test_refresh_successful(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {data['refresh_token']}"
     }
-    response = await client.get("/user/refresh", headers=headers)
+    response = await client.get("/users/refresh", headers=headers)
     data = response.json()
 
     # Assertions
@@ -30,7 +30,7 @@ async def test_refresh_successful(client, db_session):
     assert data["refresh_token"].startswith("ey")
 
     # Validate that old refresh token is invalid after calling refresh route
-    response = await client.get("/user/refresh", headers=headers)
+    response = await client.get("/users/refresh", headers=headers)
     data = response.json()
 
     # Assertions
@@ -51,7 +51,7 @@ async def test_refresh_invalid_refresh_token(client, db_session):
         "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiMDE5OThiYTUtNjUwMS03ZmEyLWE1N2MtNTc0NWJjNWE1NmI5Iiwicm9sZXMiOlt7ImlkIjoyLCJuYW1lIjoidXNlciIsImlzX2FjdGl2ZSI6dHJ1ZX1dfSwiZXhwIjoxNzU4OTg2NDMwLCJqdGkiOiIwMTk5OGJiNS0yZDY1LTczMDEtODdlMS00NzllZjU5ZjQyMDIiLCJyZWZyZXNoIjpmYWxzZX0.WqPAo4VStS2KCTkfXcuRs1ELsujlzHZFCZAz954LTGQ"  # noqa
     }
     # fmt: on
-    response = await client.get("/user/refresh", headers=headers)
+    response = await client.get("/users/refresh", headers=headers)
     data = response.json()
 
     # Assertions

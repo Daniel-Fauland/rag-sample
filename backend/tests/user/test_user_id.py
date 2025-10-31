@@ -1,7 +1,7 @@
 import pytest
 from sqlmodel import select
 from database.schemas.users import User
-from tests.test_heper import TestHelper
+from tests.test_helper import TestHelper
 
 
 test_helper = TestHelper()
@@ -18,7 +18,7 @@ async def test_get_user_by_id_own_data_as_regular_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get(f"/user/{user.id}", headers=headers)
+    response = await client.get(f"/users/{user.id}", headers=headers)
     user_response_data = response.json()
 
     # Assertions
@@ -40,7 +40,7 @@ async def test_get_user_by_email_own_data_as_regular_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get(f"/user/{user.email}", headers=headers)
+    response = await client.get(f"/users/{user.email}", headers=headers)
     user_response_data = response.json()
 
     # Assertions
@@ -62,7 +62,7 @@ async def test_get_user_by_id_other_data_as_regular_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user1_data['access_token']}"
     }
-    response = await client.get(f"/user/{user2.id}", headers=headers)
+    response = await client.get(f"/users/{user2.id}", headers=headers)
     user_response_data = response.json()
 
     # Assertions - should succeed as regular users have read:user:all permission
@@ -84,7 +84,7 @@ async def test_get_user_by_id_insufficient_permissions_as_user_without_permissio
         "accept": "application/json",
         "Authorization": f"Bearer {user_with_no_perms_data['access_token']}"
     }
-    response = await client.get(f"/user/{target_user.id}", headers=headers)
+    response = await client.get(f"/users/{target_user.id}", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -103,7 +103,7 @@ async def test_get_user_by_invalid_uuid(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/user/invalid-uuid-format", headers=headers)
+    response = await client.get("/users/invalid-uuid-format", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -123,7 +123,7 @@ async def test_get_user_by_nonexistent_id(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get(f"/user/{nonexistent_uuid}", headers=headers)
+    response = await client.get(f"/users/{nonexistent_uuid}", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -150,7 +150,7 @@ async def test_put_user_update_own_data_as_regular_user(client, db_session):
         "first_name": "UpdatedFirst",
         "last_name": "UpdatedLast"
     }
-    response = await client.put(f"/user/{original_user_id}", headers=headers, json=update_payload)
+    response = await client.put(f"/users/{original_user_id}", headers=headers, json=update_payload)
     updated_user_data = response.json()
 
     # Assertions for API response
@@ -187,7 +187,7 @@ async def test_put_user_update_other_data_insufficient_permissions_as_regular_us
     update_payload = {
         "first_name": "ShouldNotWork"
     }
-    response = await client.put(f"/user/{user2.id}", headers=headers, json=update_payload)
+    response = await client.put(f"/users/{user2.id}", headers=headers, json=update_payload)
     response_data = response.json()
 
     # Assertions - should fail as regular users don't have update:user:all permission
@@ -214,7 +214,7 @@ async def test_put_user_update_other_data_as_admin_user(client, db_session):
         "first_name": "AdminUpdated",
         "last_name": "ByAdmin"
     }
-    response = await client.put(f"/user/{target_user.id}", headers=headers, json=update_payload)
+    response = await client.put(f"/users/{target_user.id}", headers=headers, json=update_payload)
     updated_user_data = response.json()
 
     # Assertions for API response
@@ -244,7 +244,7 @@ async def test_put_user_update_with_empty_payload(client, db_session):
         "Authorization": f"Bearer {user_data['access_token']}"
     }
     update_payload = {}
-    response = await client.put(f"/user/{user.id}", headers=headers, json=update_payload)
+    response = await client.put(f"/users/{user.id}", headers=headers, json=update_payload)
     response_data = response.json()
 
     # Assertions
@@ -266,7 +266,7 @@ async def test_put_user_update_with_invalid_email(client, db_session):
     update_payload = {
         "email": "invalid-email-format"
     }
-    response = await client.put(f"/user/{user.id}", headers=headers, json=update_payload)
+    response = await client.put(f"/users/{user.id}", headers=headers, json=update_payload)
     response_data = response.json()
 
     # Assertions
@@ -286,7 +286,7 @@ async def test_delete_user_own_data_as_regular_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.delete(f"/user/{user.id}", headers=headers)
+    response = await client.delete(f"/users/{user.id}", headers=headers)
 
     # Assertions for API response
     assert response.status_code == 204
@@ -315,7 +315,7 @@ async def test_delete_user_other_data_insufficient_permissions_as_regular_user(c
         "accept": "application/json",
         "Authorization": f"Bearer {user1_data['access_token']}"
     }
-    response = await client.delete(f"/user/{user2.id}", headers=headers)
+    response = await client.delete(f"/users/{user2.id}", headers=headers)
     response_data = response.json()
 
     # Assertions - should fail as regular users don't have delete:user:all permission
@@ -338,7 +338,7 @@ async def test_delete_user_other_data_as_admin_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {admin_data['access_token']}"
     }
-    response = await client.delete(f"/user/{target_user.id}", headers=headers)
+    response = await client.delete(f"/users/{target_user.id}", headers=headers)
 
     # Assertions for API response
     assert response.status_code == 204
@@ -365,7 +365,7 @@ async def test_delete_user_nonexistent_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.delete(f"/user/{nonexistent_uuid}", headers=headers)
+    response = await client.delete(f"/users/{nonexistent_uuid}", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -387,26 +387,26 @@ async def test_permission_matrix_comprehensive(client, db_session):
 
     # Test GET permissions
     # Regular user: should succeed (has read:user:all)
-    response = await client.get(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {regular_user_data['access_token']}"})
+    response = await client.get(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {regular_user_data['access_token']}"})
     assert response.status_code == 200
 
     # Admin user: should succeed (has all permissions)
-    response = await client.get(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {admin_user_data['access_token']}"})
+    response = await client.get(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {admin_user_data['access_token']}"})
     assert response.status_code == 200
 
     # No permissions user: should fail
-    response = await client.get(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {no_perms_user_data['access_token']}"})
+    response = await client.get(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {no_perms_user_data['access_token']}"})
     assert response.status_code == 403
 
     # Test PUT permissions
     update_payload = {"first_name": "TestUpdate"}
 
     # Regular user: should fail (lacks update:user:all)
-    response = await client.put(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {regular_user_data['access_token']}"}, json=update_payload)
+    response = await client.put(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {regular_user_data['access_token']}"}, json=update_payload)
     assert response.status_code == 403
 
     # Admin user: should succeed (has all permissions)
-    response = await client.put(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {admin_user_data['access_token']}"}, json=update_payload)
+    response = await client.put(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {admin_user_data['access_token']}"}, json=update_payload)
     assert response.status_code == 200
 
     # Verify the PUT operation actually updated the database
@@ -415,20 +415,20 @@ async def test_permission_matrix_comprehensive(client, db_session):
     assert target_user.first_name == update_payload["first_name"]
 
     # No permissions user: should fail
-    response = await client.put(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {no_perms_user_data['access_token']}"}, json=update_payload)
+    response = await client.put(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {no_perms_user_data['access_token']}"}, json=update_payload)
     assert response.status_code == 403
 
     # Test DELETE permissions
     # Regular user: should fail (lacks delete:user:all)
-    response = await client.delete(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {regular_user_data['access_token']}"})
+    response = await client.delete(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {regular_user_data['access_token']}"})
     assert response.status_code == 403
 
     # No permissions user: should fail
-    response = await client.delete(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {no_perms_user_data['access_token']}"})
+    response = await client.delete(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {no_perms_user_data['access_token']}"})
     assert response.status_code == 403
 
     # Admin user: should succeed (has all permissions) - we'll test this last since it actually deletes
-    response = await client.delete(f"/user/{target_user.id}", headers={"Authorization": f"Bearer {admin_user_data['access_token']}"})
+    response = await client.delete(f"/users/{target_user.id}", headers={"Authorization": f"Bearer {admin_user_data['access_token']}"})
     assert response.status_code == 204
 
     # Verify the DELETE operation actually removed the user from the database
@@ -450,16 +450,16 @@ async def test_user_access_own_vs_other_data(client, db_session):
     original_user1_id = user1.id
 
     # User1 can read their own data
-    response = await client.get(f"/user/{user1.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"})
+    response = await client.get(f"/users/{user1.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"})
     assert response.status_code == 200
 
     # User1 can read user2's data (has read:user:all)
-    response = await client.get(f"/user/{user2.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"})
+    response = await client.get(f"/users/{user2.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"})
     assert response.status_code == 200
 
     # User1 can update their own data
     update_payload = {"first_name": "Updated"}
-    response = await client.put(f"/user/{user1.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"}, json=update_payload)
+    response = await client.put(f"/users/{user1.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"}, json=update_payload)
     assert response.status_code == 200
 
     # Verify the update actually changed the database
@@ -468,7 +468,7 @@ async def test_user_access_own_vs_other_data(client, db_session):
     assert user1.first_name == update_payload["first_name"]
 
     # User1 cannot update user2's data (lacks update:user:all)
-    response = await client.put(f"/user/{user2.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"}, json={"first_name": "ShouldNotWork"})
+    response = await client.put(f"/users/{user2.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"}, json={"first_name": "ShouldNotWork"})
     assert response.status_code == 403
 
     # Verify user2's data wasn't changed in the database
@@ -476,7 +476,7 @@ async def test_user_access_own_vs_other_data(client, db_session):
     assert user2.first_name != "ShouldNotWork"  # Should still have original value
 
     # User1 can delete their own data
-    response = await client.delete(f"/user/{user1.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"})
+    response = await client.delete(f"/users/{user1.id}", headers={"Authorization": f"Bearer {user1_data['access_token']}"})
     assert response.status_code == 204
 
     # Verify user1 was actually deleted from the database
@@ -487,6 +487,6 @@ async def test_user_access_own_vs_other_data(client, db_session):
     assert deleted_user1 is None  # User1 should be deleted
 
     # User2 cannot delete user1's data (even though user1 is already deleted)
-    response = await client.delete(f"/user/{user1.id}", headers={"Authorization": f"Bearer {user2_data['access_token']}"})
+    response = await client.delete(f"/users/{user1.id}", headers={"Authorization": f"Bearer {user2_data['access_token']}"})
     # Permission check happens before existence check
     assert response.status_code == 403

@@ -1,5 +1,5 @@
 import pytest
-from tests.test_heper import TestHelper
+from tests.test_helper import TestHelper
 from auth.jwt import JWTHandler
 from core.user.service import UserService
 
@@ -21,7 +21,7 @@ async def test_login_successful(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/user/login", json=payload)
+    response = await client.post("/users/login", json=payload)
     data = response.json()
 
     # Assertions
@@ -67,7 +67,7 @@ async def test_login_invalid_credentials(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/user/login", json=payload)
+    response = await client.post("/users/login", json=payload)
     data = response.json()
 
     # Assertions
@@ -96,7 +96,7 @@ async def test_login_user_unverified(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/user/login", json=payload)
+    response = await client.post("/users/login", json=payload)
     data = response.json()
 
     # Assertions
@@ -124,13 +124,13 @@ async def test_login_invalid_request(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/user/login", json=payload)
+    response = await client.post("/users/login", json=payload)
 
     # Assertions
     assert response.status_code == 422
 
     # Perform POST request
-    response = await client.post("/user/login", json=payload2)
+    response = await client.post("/users/login", json=payload2)
 
     # Assertions
     assert response.status_code == 422

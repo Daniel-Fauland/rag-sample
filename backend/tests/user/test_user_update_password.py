@@ -1,5 +1,5 @@
 import pytest
-from tests.test_heper import TestHelper
+from tests.test_helper import TestHelper
 from auth.jwt import JWTHandler
 from core.user.service import UserService
 
@@ -30,7 +30,7 @@ async def test_update_password_successful(client, db_session):
         "old_password": "Strongpassword123-",
         "new_password": "NewStrongPassword456!"
     }
-    response = await client.post("/user/update-password", headers=headers, json=payload)
+    response = await client.post("/users/update-password", headers=headers, json=payload)
     response_data = response.json()
 
     # Verify password update was successful
@@ -43,7 +43,7 @@ async def test_update_password_successful(client, db_session):
         "email": user.email,
         "password": "NewStrongPassword456!"
     }
-    login_response = await client.post("/user/login", json=login_payload)
+    login_response = await client.post("/users/login", json=login_payload)
     login_data = login_response.json()
 
     assert login_response.status_code == 201
@@ -56,7 +56,7 @@ async def test_update_password_successful(client, db_session):
         "email": user.email,
         "password": "Strongpassword123-"  # Old password
     }
-    old_login_response = await client.post("/user/login", json=old_login_payload)
+    old_login_response = await client.post("/users/login", json=old_login_payload)
     old_login_data = old_login_response.json()
 
     assert old_login_response.status_code == 403
@@ -79,7 +79,7 @@ async def test_update_password_incorrect_old_password(client, db_session):
         "old_password": "WrongOldPassword123!",
         "new_password": "NewStrongPassword456!"
     }
-    response = await client.post("/user/update-password", headers=headers, json=payload)
+    response = await client.post("/users/update-password", headers=headers, json=payload)
     response_data = response.json()
 
     # Assertions
@@ -104,7 +104,7 @@ async def test_update_password_with_weak_new_password(client, db_session):
         "old_password": "Strongpassword123-",
         "new_password": "weak"  # Too short, no uppercase, no numbers
     }
-    response = await client.post("/user/update-password", headers=headers, json=payload)
+    response = await client.post("/users/update-password", headers=headers, json=payload)
     response_data = response.json()
 
     # Assertions
@@ -127,7 +127,7 @@ async def test_update_password_with_empty_old_password(client, db_session):
         "old_password": "",
         "new_password": "NewStrongPassword456!"
     }
-    response = await client.post("/user/update-password", headers=headers, json=payload)
+    response = await client.post("/users/update-password", headers=headers, json=payload)
     response_data = response.json()
 
     # Assertions
@@ -149,7 +149,7 @@ async def test_update_password_with_empty_new_password(client, db_session):
         "old_password": "Strongpassword123-",
         "new_password": ""
     }
-    response = await client.post("/user/update-password", headers=headers, json=payload)
+    response = await client.post("/users/update-password", headers=headers, json=payload)
     response_data = response.json()
 
     # Assertions
@@ -167,7 +167,7 @@ async def test_update_password_with_missing_request_body(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {data['access_token']}"
     }
-    response = await client.post("/user/update-password", headers=headers)
+    response = await client.post("/users/update-password", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -189,7 +189,7 @@ async def test_update_password_with_same_old_and_new_password(client, db_session
         "old_password": "Strongpassword123-",
         "new_password": "Strongpassword123-"  # Same as old password
     }
-    response = await client.post("/user/update-password", headers=headers, json=payload)
+    response = await client.post("/users/update-password", headers=headers, json=payload)
     response_data = response.json()
 
     # Assertions - This should succeed as there's no business rule preventing same password

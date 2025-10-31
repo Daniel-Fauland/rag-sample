@@ -22,7 +22,7 @@ async def test_signup_successful(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/user/signup", json=payload)
+    response = await client.post("/users", json=payload)
     data = response.json()
 
     # Assertions
@@ -68,13 +68,13 @@ async def test_signup_user_exists(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/user/signup", json=payload)
+    response = await client.post("/users", json=payload)
 
     # Assertions
     assert response.status_code == 201
 
     # Perform POST request
-    response = await client.post("/user/signup", json=payload)
+    response = await client.post("/users", json=payload)
     data = response.json()
 
     # Assertions
@@ -109,13 +109,13 @@ async def test_signup_invalid_request(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/user/signup", json=payload)
+    response = await client.post("/users", json=payload)
 
     # Assertions
     assert response.status_code == 422
 
     # Perform POST request
-    response = await client.post("/user/signup", json=payload2)
+    response = await client.post("/users", json=payload2)
 
     # Assertions
     assert response.status_code == 422
