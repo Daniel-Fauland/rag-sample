@@ -13,7 +13,7 @@ user_service = UserService()
 async def test_update_password_successful(client, db_session):
     """Test successful password update and verify it works correctly"""
     # Create user and login
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Get user info for later verification
     token_data = await jwt_handler.decode_token(data['access_token'])
@@ -68,7 +68,7 @@ async def test_update_password_successful(client, db_session):
 @pytest.mark.asyncio
 async def test_update_password_incorrect_old_password(client, db_session):
     """Test password update with incorrect old password"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request with incorrect old password
     headers = {
@@ -93,7 +93,7 @@ async def test_update_password_incorrect_old_password(client, db_session):
 @pytest.mark.asyncio
 async def test_update_password_with_weak_new_password(client, db_session):
     """Test password update with weak new password (validation should fail)"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request with weak new password
     headers = {
@@ -116,7 +116,7 @@ async def test_update_password_with_weak_new_password(client, db_session):
 @pytest.mark.asyncio
 async def test_update_password_with_empty_old_password(client, db_session):
     """Test password update with empty old password"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request with empty old password
     headers = {
@@ -138,7 +138,7 @@ async def test_update_password_with_empty_old_password(client, db_session):
 @pytest.mark.asyncio
 async def test_update_password_with_empty_new_password(client, db_session):
     """Test password update with empty new password"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request with empty new password
     headers = {
@@ -160,7 +160,7 @@ async def test_update_password_with_empty_new_password(client, db_session):
 @pytest.mark.asyncio
 async def test_update_password_with_missing_request_body(client, db_session):
     """Test password update with missing request body"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request without request body
     headers = {
@@ -178,7 +178,7 @@ async def test_update_password_with_missing_request_body(client, db_session):
 @pytest.mark.asyncio
 async def test_update_password_with_same_old_and_new_password(client, db_session):
     """Test password update where new password is same as old password"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request with same old and new password
     headers = {

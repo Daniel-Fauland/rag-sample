@@ -12,7 +12,7 @@ user_service = UserService()
 @pytest.mark.asyncio
 async def test_me_successful_with_valid_access_token(client, db_session):
     """Test /user/me with valid access token"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform GET request with Authorization header using the access token
     headers = {
@@ -81,7 +81,7 @@ async def test_me_with_expired_access_token(client, db_session):
 @pytest.mark.asyncio
 async def test_me_with_refresh_token_instead_of_access_token(client, db_session):
     """Test /user/me with refresh token instead of access token"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform GET request with Authorization header using the refresh token (should fail)
     headers = {
@@ -118,7 +118,7 @@ async def test_me_without_authorization_header(client, db_session):
 @pytest.mark.asyncio
 async def test_me_with_malformed_authorization_header(client, db_session):
     """Test /user/me with malformed Authorization header"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Test with malformed Authorization header (missing "Bearer" prefix)
     headers = {
@@ -137,7 +137,7 @@ async def test_me_with_malformed_authorization_header(client, db_session):
 @pytest.mark.asyncio
 async def test_me_user_roles_structure(client, db_session):
     """Test that /user/me returns proper role structure"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform GET request with Authorization header using the access token
     headers = {

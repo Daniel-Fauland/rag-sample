@@ -75,21 +75,15 @@ class TestHelper():
             db_session=db_session, user_id=user.id, role_id=2)
         return user
 
-    async def login_user(self, client, db_session, payload=None):
-        user = await self.create_user_if_not_exists(client, db_session, payload)
-
-        login_payload = {
-            "email": user.email,
-            "password": "Strongpassword123-"
-        }
-        response = await client.post("/users/login", json=login_payload)
-        data = response.json()
-        assert response.status_code == 201
-        return data
-
-    async def login_user_with_type(self, client, db_session, user_type="normal", email_suffix=""):
+    async def login_user_with_type(self, client, db_session, user_type="normal", email_suffix="", unique=False):
         """Helper to create and login different types of users"""
-        email = f"test_{user_type}_{email_suffix}@example.com"
+        uniquestr = ""
+        if unique:
+            uniquestr = f"_{uuid.uuid4().hex[:8]}"
+        sfx = ""
+        if email_suffix:
+            sfx = f"_{email_suffix}"
+        email = f"test_{user_type}{uniquestr}{sfx}@example.com"
 
         if user_type == "admin":
             user = await self.create_admin_user_if_not_exists(client, db_session, payload={"email": email})

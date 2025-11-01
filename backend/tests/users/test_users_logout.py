@@ -12,7 +12,7 @@ user_service = UserService()
 @pytest.mark.asyncio
 async def test_logout_successful_access_token(client, db_session):
     """Test logout with valid access token"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request with Authorization header using the access token
     headers = {
@@ -29,7 +29,7 @@ async def test_logout_successful_access_token(client, db_session):
 @pytest.mark.asyncio
 async def test_logout_successful_access_refresh_token(client, db_session):
     """Test logout with valid access & refresh token"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform POST request with Authorization header using the access token & payload including the refresh token
     headers = {

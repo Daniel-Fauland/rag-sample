@@ -12,7 +12,7 @@ user_service = UserService()
 @pytest.mark.asyncio
 async def test_refresh_successful(client, db_session):
     """Test refresh with valid refresh token"""
-    data = await test_helper.login_user(client, db_session)
+    data, _ = await test_helper.login_user_with_type(client, db_session, user_type="normal", unique=True)
 
     # Perform GET request with Authorization header using the refresh token
     headers = {
