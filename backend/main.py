@@ -56,8 +56,8 @@ register_errors(app)
 
 # Include routers
 app.include_router(test_router, tags=["Test"])
-app.include_router(user_router, prefix="/users", tags=["User"])
-app.include_router(role_router, prefix="/role", tags=["Role"])
+app.include_router(user_router, prefix="/users", tags=["Users"])
+app.include_router(role_router, prefix="/roles", tags=["Roles"])
 app.include_router(permission_router, prefix="/permission",
                    tags=["Permission"])
 app.include_router(role_assignment_router,
