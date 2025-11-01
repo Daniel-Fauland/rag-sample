@@ -16,8 +16,7 @@ role_service = RoleService()
 class RoleAssignmentService:
     async def get_role_assignments(self, session: AsyncSession, user_id: Optional[uuid.UUID] = None,
                                    role_id: Optional[int] = None, order_by_field: str = "assigned_at",
-                                   order_by_direction: str = "desc", limit: int = None,
-                                   include_user: bool = False, include_role: bool = False) -> Sequence[UserRole]:
+                                   order_by_direction: str = "desc", limit: int = None) -> Sequence[UserRole]:
         """Get role assignments with optional filtering by user_id and/or role_id
 
         Args:
@@ -27,8 +26,6 @@ class RoleAssignmentService:
             order_by_field: Field to order by (default: assigned_at)
             order_by_direction: Order direction (asc/desc)
             limit: Maximum number of records to return
-            include_user: Whether to include user data
-            include_role: Whether to include role data
 
         Returns:
             A sequence of UserRole objects
@@ -49,8 +46,6 @@ class RoleAssignmentService:
             order_by_field=order_by_field,
             order_by_direction=order_by_direction,
             limit=limit,
-            include_user=include_user,
-            include_role=include_role,
             multiple=True
         )
 

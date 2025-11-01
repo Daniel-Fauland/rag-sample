@@ -58,12 +58,12 @@ register_errors(app)
 app.include_router(test_router, tags=["Test"])
 app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(role_router, prefix="/roles", tags=["Roles"])
-app.include_router(permission_router, prefix="/permission",
-                   tags=["Permission"])
+app.include_router(permission_router, prefix="/permissions",
+                   tags=["Permissions"])
 app.include_router(role_assignment_router,
-                   prefix="/role-assignment", tags=["Role Assignment"])
+                   prefix="/role-assignments", tags=["Role Assignments"])
 app.include_router(permission_assignment_router,
-                   prefix="/permission-assignment", tags=["Permission Assignment"])
+                   prefix="/permission-assignments", tags=["Permission Assignments"])
 app.include_router(health_router, prefix="/health", tags=["Health"])
 
 

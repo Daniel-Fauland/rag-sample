@@ -1,25 +1,16 @@
 import uuid
 from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.orm import selectinload
 from database.schemas.user_roles import UserRole
 from typing import Sequence
 
 
 class RoleAssignmentServiceHelper:
     async def _get_role_assignments(self, session: AsyncSession, where_clause=None, order_by_field: str = None,
-                                    order_by_direction: str = "desc", limit: int = None, include_user: bool = False,
-                                    include_role: bool = False, multiple: bool = False) -> UserRole | Sequence[UserRole] | None:
+                                    order_by_direction: str = "desc", limit: int = None, multiple: bool = False) -> UserRole | Sequence[UserRole] | None:
         """Helper to get role assignments by a given where clause"""
-        options = []
-        if include_user:
-            options.append(selectinload(UserRole.user))
-        if include_role:
-            options.append(selectinload(UserRole.role))
 
         statement = select(UserRole)
-        if options:
-            statement = statement.options(*options)
         if where_clause is not None:
             statement = statement.where(where_clause)
         if order_by_field:

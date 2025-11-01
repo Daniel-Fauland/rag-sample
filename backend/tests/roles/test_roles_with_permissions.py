@@ -1,4 +1,3 @@
-import uuid
 import pytest
 from tests.test_helper import TestHelper
 
@@ -17,7 +16,7 @@ async def test_get_all_roles_successful_as_regular_user(client, db_session):
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/roles", headers=headers)
+    response = await client.get("/roles-with-permissions", headers=headers)
     roles_data = response.json()
 
     # Assertions
@@ -33,11 +32,28 @@ async def test_get_all_roles_successful_as_regular_user(client, db_session):
         assert "description" in role
         assert "is_active" in role
         assert "created_at" in role
+        assert "permissions" in role
         assert isinstance(role["id"], int)
         assert isinstance(role["name"], str)
         assert isinstance(role["description"], str)
         assert isinstance(role["is_active"], bool)
         assert isinstance(role["created_at"], str)
+        assert isinstance(role["permissions"], list)
+        for permission in role["permissions"]:
+            assert "id" in permission
+            assert "type" in permission
+            assert "resource" in permission
+            assert "context" in permission
+            assert "description" in permission
+            assert "is_active" in permission
+            assert "created_at" in permission
+            assert isinstance(permission["id"], int)
+            assert isinstance(permission["type"], str)
+            assert isinstance(permission["resource"], str)
+            assert isinstance(permission["context"], str)
+            assert isinstance(permission["description"], str)
+            assert isinstance(permission["is_active"], bool)
+            assert isinstance(permission["created_at"], str)
 
 
 @pytest.mark.asyncio
@@ -54,7 +70,7 @@ async def test_get_all_roles_successful_with_query_parameter(client, db_session)
     order_by_field = "id"
     order_by_direction = "desc"
     limit = 999
-    response = await client.get(f"/roles?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
+    response = await client.get(f"/roles-with-permissions?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     roles_data = response.json()
 
     # Assertions
@@ -77,11 +93,28 @@ async def test_get_all_roles_successful_with_query_parameter(client, db_session)
         assert "description" in role
         assert "is_active" in role
         assert "created_at" in role
+        assert "permissions" in role
         assert isinstance(role["id"], int)
         assert isinstance(role["name"], str)
         assert isinstance(role["description"], str)
         assert isinstance(role["is_active"], bool)
         assert isinstance(role["created_at"], str)
+        assert isinstance(role["permissions"], list)
+        for permission in role["permissions"]:
+            assert "id" in permission
+            assert "type" in permission
+            assert "resource" in permission
+            assert "context" in permission
+            assert "description" in permission
+            assert "is_active" in permission
+            assert "created_at" in permission
+            assert isinstance(permission["id"], int)
+            assert isinstance(permission["type"], str)
+            assert isinstance(permission["resource"], str)
+            assert isinstance(permission["context"], str)
+            assert isinstance(permission["description"], str)
+            assert isinstance(permission["is_active"], bool)
+            assert isinstance(permission["created_at"], str)
 
     # --- Test ordering by name ---
     order_by_field = "name"
@@ -132,7 +165,7 @@ async def test_get_all_roles_unsuccessful_with_no_permissions(client, db_session
         "accept": "application/json",
         "Authorization": f"Bearer {user_data['access_token']}"
     }
-    response = await client.get("/roles", headers=headers)
+    response = await client.get("/roles-with-permissions", headers=headers)
     response_data = response.json()
 
     # Assertions
@@ -152,79 +185,7 @@ async def test_get_all_roles_unauthenticated(client):
     headers = {
         "accept": "application/json"
     }
-    response = await client.get("/roles", headers=headers)
-    response_data = response.json()
-
-    # Assertions
-    assert response.status_code == 403
-    assert "detail" in response_data
-    assert response_data["detail"] == "Not authenticated"
-
-
-@pytest.mark.asyncio
-async def test_create_role_successful_as_admin(client, db_session):
-    """Test POST /roles with admin user (has all permissions)"""
-    # Login as admin user - they have all permissions by default
-    user_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", "user1")
-
-    # Perform POST request with regular user access token
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {user_data['access_token']}"
-    }
-    payload = {
-        "name": f"test-{uuid.uuid4().hex[:8]}",
-        "description": "A test role"
-    }
-    response = await client.post("/roles", headers=headers, json=payload)
-    response_data = response.json()
-
-    # Assertions
-    assert response.status_code == 201
-    assert "id" in response_data
-    assert "name" in response_data
-    assert "success" in response_data
-    assert isinstance(response_data["id"], int)
-    assert isinstance(response_data["name"], str)
-    assert isinstance(response_data["success"], bool)
-
-
-@pytest.mark.asyncio
-async def test_create_role_insufficient_permissions(client, db_session):
-    """Test POST /roles with normal user (needs permission: create:role:all)"""
-    # Login as regular user - they not have create:role:all permission by default
-    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
-
-    # Perform POST request with regular user access token
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {user_data['access_token']}"
-    }
-    payload = {
-        "name": f"test-{uuid.uuid4().hex[:8]}",
-        "description": "A test role"
-    }
-    response = await client.post("/roles", headers=headers, json=payload)
-    response_data = response.json()
-
-    # Assertions
-    assert response.status_code == 403
-    assert "message" in response_data
-    assert "error_code" in response_data
-    assert "solution" in response_data
-    assert response_data["error_code"] == "105_insufficient_permissions"
-    assert "create:role:all" in response_data["message"]
-
-
-@pytest.mark.asyncio
-async def test_create_role_unauthenticated(client):
-    """Test POST /roles with unauthenticated user"""
-
-    # Perform POST request without user access token
-    headers = {
-        "accept": "application/json"
-    }
-    response = await client.get("/roles", headers=headers)
+    response = await client.get("/roles-with-permissions", headers=headers)
     response_data = response.json()
 
     # Assertions

@@ -32,10 +32,6 @@ async def get_role_assignments(
             "desc", description="Whether to sort the field asc or desc"),
         limit: int = Query(
             None, description="The maximum number of records to return"),
-        include_user: bool = Query(
-            False, description="Include user details in response"),
-        include_role: bool = Query(
-            False, description="Include role details in response"),
         session: AsyncSession = Depends(get_session),
         current_user: UserModel = Depends(get_current_user)):
     """Get all role assignments with optional filtering <br />
@@ -66,9 +62,7 @@ async def get_role_assignments(
         role_id=role_id,
         order_by_field=order_by_field,
         order_by_direction=order_by_direction,
-        limit=limit,
-        include_user=include_user,
-        include_role=include_role
+        limit=limit
     )
 
     return assignments

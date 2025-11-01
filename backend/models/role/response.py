@@ -39,7 +39,7 @@ class RoleCreateResponse(BaseModel):
     id: int = Field(..., description="The id of the newly created role", examples=[
                     3])
     name: str = Field(..., description="The name of the newly created role", examples=[
-                      "admin"])
+                      "new-role"])
     success: bool = Field(..., description="Whether the role was successfully created", examples=[
                           True])
 

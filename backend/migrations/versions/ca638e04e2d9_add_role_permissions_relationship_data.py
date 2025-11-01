@@ -130,19 +130,9 @@ def downgrade() -> None:
         sa.column('permission_id', sa.Integer)
     )
 
-    # Define roles table reference
-    roles_table = sa.table(
-        'roles',
-        sa.column('id', sa.Integer),
-        sa.column('name', sa.String)
-    )
-
-    # Remove all role-permission relationships for user role
-    # (Admin role has no explicit relationships, so nothing to remove)
+    # Remove ALL role-permission relationships to avoid foreign key violations
+    # when the next downgrade step deletes permissions
+    # This includes relationships created by tests or other sources
     op.execute(
-        role_permissions_table.delete().where(
-            role_permissions_table.c.role_id.in_(
-                sa.select(roles_table.c.id).where(roles_table.c.name == 'user')
-            )
-        )
+        role_permissions_table.delete()
     )
