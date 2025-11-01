@@ -9,7 +9,7 @@ test_helper = TestHelper()
 
 @pytest.mark.asyncio
 async def test_get_user_by_id_own_data_as_regular_user(client, db_session):
-    """Test GET /user/{id} accessing own data with regular user (has read:user:me permission)"""
+    """Test GET /users/{id} accessing own data with regular user (has read:user:me permission)"""
     # Login as regular user (automatically creates user)
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -31,7 +31,7 @@ async def test_get_user_by_id_own_data_as_regular_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_user_by_email_own_data_as_regular_user(client, db_session):
-    """Test GET /user/{id} accessing own data by email with regular user"""
+    """Test GET /users/{id} accessing own data by email with regular user"""
     # Login as regular user
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user2")
 
@@ -50,7 +50,7 @@ async def test_get_user_by_email_own_data_as_regular_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_user_by_id_other_data_as_regular_user(client, db_session):
-    """Test GET /user/{id} accessing other's data with regular user (has read:user:all permission)"""
+    """Test GET /users/{id} accessing other's data with regular user (has read:user:all permission)"""
     # Login as regular user
     user1_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -72,7 +72,7 @@ async def test_get_user_by_id_other_data_as_regular_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_user_by_id_insufficient_permissions_as_user_without_permissions(client, db_session):
-    """Test GET /user/{id} fails with user that has no permissions"""
+    """Test GET /users/{id} fails with user that has no permissions"""
     # Create user without permissions
     user_with_no_perms_data, user = await test_helper.login_user_with_type(client, db_session, "no_permissions", "user1")
 
@@ -94,7 +94,7 @@ async def test_get_user_by_id_insufficient_permissions_as_user_without_permissio
 
 @pytest.mark.asyncio
 async def test_get_user_by_invalid_uuid(client, db_session):
-    """Test GET /user/{id} with invalid UUID format"""
+    """Test GET /users/{id} with invalid UUID format"""
     # Login as regular user
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -113,7 +113,7 @@ async def test_get_user_by_invalid_uuid(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_user_by_nonexistent_id(client, db_session):
-    """Test GET /user/{id} with nonexistent user ID"""
+    """Test GET /users/{id} with nonexistent user ID"""
     # Login as regular user
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -133,7 +133,7 @@ async def test_get_user_by_nonexistent_id(client, db_session):
 
 @pytest.mark.asyncio
 async def test_put_user_update_own_data_as_regular_user(client, db_session):
-    """Test PUT /user/{id} updating own data with regular user (has update:user:me permission)"""
+    """Test PUT /users/{id} updating own data with regular user (has update:user:me permission)"""
     # Login as regular user
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -172,7 +172,7 @@ async def test_put_user_update_own_data_as_regular_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_put_user_update_other_data_insufficient_permissions_as_regular_user(client, db_session):
-    """Test PUT /user/{id} updating other's data fails with regular user (lacks update:user:all)"""
+    """Test PUT /users/{id} updating other's data fails with regular user (lacks update:user:all)"""
     # Login as regular user
     user1_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -197,7 +197,7 @@ async def test_put_user_update_other_data_insufficient_permissions_as_regular_us
 
 @pytest.mark.asyncio
 async def test_put_user_update_other_data_as_admin_user(client, db_session):
-    """Test PUT /user/{id} updating other's data with admin user (has all permissions)"""
+    """Test PUT /users/{id} updating other's data with admin user (has all permissions)"""
     # Login as admin user
     admin_data, user = await test_helper.login_user_with_type(client, db_session, "admin", "admin1")
 
@@ -234,7 +234,7 @@ async def test_put_user_update_other_data_as_admin_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_put_user_update_with_empty_payload(client, db_session):
-    """Test PUT /user/{id} with empty update payload"""
+    """Test PUT /users/{id} with empty update payload"""
     # Login as regular user
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -254,7 +254,7 @@ async def test_put_user_update_with_empty_payload(client, db_session):
 
 @pytest.mark.asyncio
 async def test_put_user_update_with_invalid_email(client, db_session):
-    """Test PUT /user/{id} with invalid email format"""
+    """Test PUT /users/{id} with invalid email format"""
     # Login as regular user
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -276,7 +276,7 @@ async def test_put_user_update_with_invalid_email(client, db_session):
 
 @pytest.mark.asyncio
 async def test_delete_user_own_data_as_regular_user(client, db_session):
-    """Test DELETE /user/{id} deleting own data with regular user (has delete:user:me permission)"""
+    """Test DELETE /users/{id} deleting own data with regular user (has delete:user:me permission)"""
     # Login as regular user
     user_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
     original_user_id = user.id
@@ -303,7 +303,7 @@ async def test_delete_user_own_data_as_regular_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_delete_user_other_data_insufficient_permissions_as_regular_user(client, db_session):
-    """Test DELETE /user/{id} deleting other's data fails with regular user (lacks delete:user:all)"""
+    """Test DELETE /users/{id} deleting other's data fails with regular user (lacks delete:user:all)"""
     # Login as regular user
     user1_data, user = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -325,7 +325,7 @@ async def test_delete_user_other_data_insufficient_permissions_as_regular_user(c
 
 @pytest.mark.asyncio
 async def test_delete_user_other_data_as_admin_user(client, db_session):
-    """Test DELETE /user/{id} deleting other's data with admin user (has all permissions)"""
+    """Test DELETE /users/{id} deleting other's data with admin user (has all permissions)"""
     # Login as admin user
     admin_data, user = await test_helper.login_user_with_type(client, db_session, "admin", "admin1")
 
@@ -355,7 +355,7 @@ async def test_delete_user_other_data_as_admin_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_delete_user_nonexistent_user(client, db_session):
-    """Test DELETE /user/{id} with nonexistent user"""
+    """Test DELETE /users/{id} with nonexistent user"""
     # Login as admin user (to have delete permissions)
     user_data, user = await test_helper.login_user_with_type(client, db_session, "admin", "admin1")
 

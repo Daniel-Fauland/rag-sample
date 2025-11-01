@@ -7,7 +7,7 @@ test_helper = TestHelper()
 
 @pytest.mark.asyncio
 async def test_get_all_users_successful_as_regular_user(client, db_session):
-    """Test GET /user with regular user (has read:user:all permission by default)"""
+    """Test GET /users with regular user (has read:user:all permission by default)"""
     # Login as regular user - they have read:user:all permission by default
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -44,7 +44,7 @@ async def test_get_all_users_successful_as_regular_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_all_users_with_permissions_successful_as_regular_user(client, db_session):
-    """Test GET /user-with-permissions with regular user (has read:user:all permission)"""
+    """Test GET /users-with-permissions with regular user (has read:user:all permission)"""
     # Login as regular user
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -92,7 +92,7 @@ async def test_get_all_users_with_permissions_successful_as_regular_user(client,
 
 @pytest.mark.asyncio
 async def test_get_all_users_insufficient_permissions_as_user_without_permissions(client, db_session):
-    """Test GET /user fails with user that has no permissions"""
+    """Test GET /users fails with user that has no permissions"""
     # Create and login user with no permissions
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "no_permissions", "user1")
 
@@ -114,7 +114,7 @@ async def test_get_all_users_insufficient_permissions_as_user_without_permission
 
 @pytest.mark.asyncio
 async def test_get_all_users_with_permissions_insufficient_permissions_as_user_without_permissions(client, db_session):
-    """Test GET /user-with-permissions fails with user that has no permissions"""
+    """Test GET /users-with-permissions fails with user that has no permissions"""
     # Create and login user with no permissions
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "no_permissions", "user1")
 
@@ -136,7 +136,7 @@ async def test_get_all_users_with_permissions_insufficient_permissions_as_user_w
 
 @pytest.mark.asyncio
 async def test_get_all_users_successful_as_admin_user(client, db_session):
-    """Test GET /user with admin user (has all permissions)"""
+    """Test GET /users with admin user (has all permissions)"""
     # Login as admin user
     admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", "admin_1")
 
@@ -170,7 +170,7 @@ async def test_get_all_users_successful_as_admin_user(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_all_users_with_ordering_parameters(client, db_session):
-    """Test GET /user with query parameters for ordering"""
+    """Test GET /users with query parameters for ordering"""
     # Login as regular user
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -202,7 +202,7 @@ async def test_get_all_users_with_ordering_parameters(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_all_users_with_limit_parameter(client, db_session):
-    """Test GET /user with limit parameter"""
+    """Test GET /users with limit parameter"""
     # Login as regular user
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -230,7 +230,7 @@ async def test_get_all_users_with_limit_parameter(client, db_session):
 
 @pytest.mark.asyncio
 async def test_get_all_users_with_permissions_with_ordering_parameters(client, db_session):
-    """Test GET /user-with-permissions with query parameters"""
+    """Test GET /users-with-permissions with query parameters"""
     # Login as regular user
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 
@@ -264,7 +264,7 @@ async def test_get_all_users_with_permissions_with_ordering_parameters(client, d
 
 @pytest.mark.asyncio
 async def test_get_all_users_empty_query_parameters(client, db_session):
-    """Test GET /user with empty/None query parameters"""
+    """Test GET /users with empty/None query parameters"""
     # Login as regular user
     user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", "user1")
 

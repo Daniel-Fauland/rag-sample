@@ -93,11 +93,17 @@ async def run_migrations(env, direction="upgrade", revision="head"):
 
 
 # Run the integration tests
-def run_tests(env):
-    print("Running unit tests...\n")
+def run_tests(env, test_path=None):
+    if test_path:
+        print(f"Running unit tests for: {test_path}\n")
+        pytest_cmd = f"pytest -s --color=yes {test_path}"
+    else:
+        print("Running unit tests...\n")
+        pytest_cmd = "pytest -s --color=yes"
+
     try:
         # subprocess.run("ls")
-        subprocess.run("pytest -s --color=yes",
+        subprocess.run(pytest_cmd,
                        shell=True, check=True, text=True, env=env)
     except subprocess.CalledProcessError as e:
         print(f"Error when running tests: {e}")
@@ -109,6 +115,11 @@ async def main():
     # Step 0: Start timing for the entire process
     start_time = time.perf_counter()
     history = []
+
+    # Parse command-line arguments for test path
+    test_path = None
+    if len(sys.argv) > 1:
+        test_path = sys.argv[1]
 
     # Step 1: Overwrite the env variables
     env = overwrite_env()
@@ -124,7 +135,7 @@ async def main():
     history = await helper.timer(start_time, "Migrations: upgrade -> head", history)
 
     # Step 4: Run the tests
-    run_tests(env)
+    run_tests(env, test_path)
     history = await helper.timer(start_time, "Integration Tests", history)
 
     # Step 5: Downgrade the migrations

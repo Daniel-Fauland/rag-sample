@@ -409,6 +409,13 @@ You can simply run the tests by calling this method from within the `backend/` d
 uv run tests/run_tests.py
 ```
 
+You can also only test speecific folders / files like this:
+
+```
+uv run tests/run_tests.py tests/users/
+uv run tests/run_tests.py tests/roles/test_roles.py
+```
+
 Keep in mind that every test file within the [tests](./backend/tests/) directory must start with the prefix `test_` otherwise it won't be picked up by the `pytest` library.
 
 > [!Tip]
