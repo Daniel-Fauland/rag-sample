@@ -7,8 +7,8 @@ from core.user.service import UserService
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from auth.auth import get_current_user, check_ownership_permissions
-from models.user.request import SignupRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
-from models.user.response import SignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
+from models.user.request import SignupRequest, BatchSignupRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
+from models.user.response import SignupResponse, BatchSignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
 from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID, XValueError
@@ -53,6 +53,21 @@ async def signup(request: Request, user_data: SignupRequest, session: AsyncSessi
 
     new_user = await service.create_user(user_data, session)
     return SignupResponse(email=new_user.email, success=True)
+
+
+@user_router.post("/batch", status_code=status.HTTP_201_CREATED, response_model=BatchSignupResponse)
+@limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
+async def batch_signup(request: Request, user_data: BatchSignupRequest, session: AsyncSession = Depends(get_session)):
+    """Create new users in the database <br />
+
+    Args: <br />
+        user_data (BatchSignupRequest): The users to sign up <br />
+
+    Returns: <br />
+        BatchSignupResponse: A list of users email, success flag & the reason for failed signup <br />
+    """
+    results = await service.create_users(user_data, session)
+    return BatchSignupResponse(result=results)
 
 
 @user_router.post("/login", status_code=status.HTTP_201_CREATED, response_model=SigninResponse)

@@ -47,6 +47,10 @@ class SignupRequest(UserCommonModel):
         return v
 
 
+class BatchSignupRequest(BaseModel):
+    users: list[SignupRequest]
+
+
 class LoginRequest(UserCommonModel):
     password: str = Field(..., examples=["Mysecretpassword99"])
 

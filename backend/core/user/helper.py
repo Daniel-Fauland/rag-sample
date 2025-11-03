@@ -5,13 +5,14 @@ from sqlalchemy.orm import selectinload
 from database.schemas.users import User
 from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
-from models.user.request import SignupRequest
-from models.user.response import UserModel
+from models.user.request import SignupRequest, BatchSignupRequest
+from models.user.response import UserModel, BatchSignupResponseBase
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from errors import UserInvalidPassword, InternalServerError
 from utils.logging import logger
 from config import config
+import asyncio
 
 user_helper = UserHelper()
 jwt_handler = JWTHandler()
@@ -76,6 +77,116 @@ class ServiceHelper():
 
         await session.commit()
         return new_user
+
+    async def _create_users(self, user_data: BatchSignupRequest, session: AsyncSession) -> list[BatchSignupResponseBase]:
+        """Helper to create new users in the database in batch
+
+        This method efficiently creates multiple users by:
+        1. Detecting duplicate emails within the batch
+        2. Checking all emails against existing users in a single query
+        3. Hashing passwords in parallel
+        4. Creating all users in a single bulk insert
+        5. Creating all user-role relationships in a single bulk insert
+
+        Args:
+            user_data (BatchSignupRequest): The data of the new users to create
+            session (AsyncSession): The database session
+
+        Returns:
+            list[BatchSignupResponseBase]: List of results for each user with email, success flag, and reason
+        """
+        results: list[BatchSignupResponseBase] = []
+        users_to_create: list[SignupRequest] = user_data.users
+
+        # Step 1: Detect duplicate emails within the batch itself
+        seen_emails = {}
+        unique_users = []
+        for user in users_to_create:
+            if user.email in seen_emails:
+                # Duplicate within the batch
+                results.append(
+                    BatchSignupResponseBase(
+                        email=user.email,
+                        success=False,
+                        reason="Duplicate email in the batch request"
+                    )
+                )
+            else:
+                seen_emails[user.email] = True
+                unique_users.append(user)
+
+        # If no unique users to process, return early
+        if not unique_users:
+            return results
+
+        # Step 2: Extract all unique emails and check which ones already exist in database
+        emails = [user.email for user in unique_users]
+        statement = select(User.email).where(User.email.in_(emails))
+        result = await session.exec(statement)
+        existing_emails = set(result.all())
+
+        # Step 3: Separate users into existing and new
+        new_users_data = []
+        for user in unique_users:
+            if user.email in existing_emails:
+                # User already exists in database
+                results.append(
+                    BatchSignupResponseBase(
+                        email=user.email,
+                        success=False,
+                        reason="User with this email already exists in the database"
+                    )
+                )
+            else:
+                new_users_data.append(user)
+
+        # If no new users to create, return early
+        if not new_users_data:
+            return results
+
+        # Step 4: Get the default role once (used for all users)
+        default_role = await self._get_user_role(config.default_user_role, session)
+
+        # Step 5: Hash all passwords in parallel for better performance
+        password_hash_tasks = [
+            user_helper.hash_password(user.password)
+            for user in new_users_data
+        ]
+        password_hashes = await asyncio.gather(*password_hash_tasks)
+
+        # Step 6: Create User objects in bulk
+        new_users = []
+        for user_data, password_hash in zip(new_users_data, password_hashes):
+            user_data_dict = user_data.model_dump()
+            new_user = User(**user_data_dict)
+            new_user.password_hash = password_hash
+            new_users.append(new_user)
+
+        # Step 7: Add all users to session and flush to get IDs
+        session.add_all(new_users)
+        await session.flush()
+
+        # Step 8: Create user-role relationships in bulk
+        user_roles = [
+            UserRole(user_id=user.id, role_id=default_role.id)
+            for user in new_users
+        ]
+        session.add_all(user_roles)
+
+        # Step 9: Commit all changes
+        await session.commit()
+
+        # Step 10: Add successful results
+        for user in new_users:
+            results.append(
+                BatchSignupResponseBase(
+                    email=user.email,
+                    success=True,
+                    reason=""
+                )
+            )
+
+        return results
 
     async def _delete_user(self, session: AsyncSession, where_clause) -> bool:
         """Helper to delete a user by a given where clause"""

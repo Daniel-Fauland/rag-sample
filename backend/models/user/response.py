@@ -72,6 +72,15 @@ class SignupResponse(BaseModel):
         True])
 
 
+class BatchSignupResponseBase(SignupResponse):
+    reason: Optional[str] = Field(..., description="The reason why a signup failed", examples=[
+                                  "User does already exist in the database"])
+
+
+class BatchSignupResponse(BaseModel):
+    result: list[BatchSignupResponseBase]
+
+
 class SigninRefreshModelBase(BaseModel):
     access_token: str = Field(..., description="The access JWT", examples=[
         "eyJhbG..."])

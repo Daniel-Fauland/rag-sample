@@ -2,8 +2,8 @@ import uuid
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Sequence
 from database.schemas.users import User
-from models.user.request import SignupRequest
-from models.user.response import UserModel
+from models.user.request import SignupRequest, BatchSignupRequest
+from models.user.response import UserModel, BatchSignupResponseBase
 from core.user.helper import ServiceHelper
 
 service_helper = ServiceHelper()
@@ -77,6 +77,17 @@ class UserService:
             User: The newly created user
         """
         return await service_helper._create_user(user_data=user_data, session=session)
+
+    async def create_users(self, user_data: BatchSignupRequest, session: AsyncSession) -> list[BatchSignupResponseBase]:
+        """Create multiple users in database including the user-role relationships in batch
+
+        Args:
+            user_data (BatchSignupRequest): The data of the new users to create
+
+        Returns:
+            list[BatchSignupResponseBase]: List of results for each user with email, success flag, and reason
+        """
+        return await service_helper._create_users(user_data=user_data, session=session)
 
     async def create_access_tokens(self, user: UserModel, access: bool = True, refresh: bool = True) -> dict:
         """
