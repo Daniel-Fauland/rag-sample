@@ -211,6 +211,7 @@ class ServiceHelper():
         This method efficiently deletes multiple users by:
         1. Parsing identifiers (emails and UUIDs)
         2. Deleting all matching users in a single database operation
+        3. Related records (user_roles) are automatically deleted via CASCADE
 
         Args:
             delete_data (BatchDeleteRequest): The identifiers (emails or UUIDs) of users to delete
@@ -255,7 +256,7 @@ class ServiceHelper():
             return
 
         # Step 3: Delete all matching users in a single operation
-        # Use OR to combine email and UUID conditions
+        # Related records in user_roles are automatically deleted via CASCADE
         from sqlalchemy import or_
         statement = delete(User).where(or_(*conditions))
 

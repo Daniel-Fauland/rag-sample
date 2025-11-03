@@ -128,9 +128,14 @@ async def test_get_all_roles_successful_with_query_parameter(client, db_session)
     assert isinstance(roles_data, list)
     assert len(roles_data) >= 2
 
+    # Verify ordering is consistent (PostgreSQL ORDER BY may differ from Python sorted())
+    # Check that consecutive pairs are in correct order
     role_names = [role["name"] for role in roles_data]
-    assert role_names == sorted(
-        role_names), "Roles should be sorted by name in ascending order"
+    for i in range(len(role_names) - 1):
+        # In ascending order, each name should be <= the next
+        # Note: We can't use Python's sorted() as PostgreSQL collation may differ
+        assert role_names[i].lower() <= role_names[i + 1].lower(), \
+            f"Roles should be sorted by name in ascending order, but '{role_names[i]}' comes after '{role_names[i + 1]}'"
 
     # Verify 'admin' comes before 'user' alphabetically
     admin_index = next((i for i, role in enumerate(
