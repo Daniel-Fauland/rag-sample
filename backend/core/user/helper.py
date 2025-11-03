@@ -1,11 +1,11 @@
 from datetime import timedelta, datetime, timezone
-from sqlmodel import select, asc, desc
+from sqlmodel import select, asc, desc, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from database.schemas.users import User
 from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
-from models.user.request import SignupRequest, BatchSignupRequest
+from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest
 from models.user.response import UserModel, BatchSignupResponseBase
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
@@ -13,6 +13,7 @@ from errors import UserInvalidPassword, InternalServerError
 from utils.logging import logger
 from config import config
 import asyncio
+import uuid
 
 user_helper = UserHelper()
 jwt_handler = JWTHandler()
@@ -202,6 +203,68 @@ class ServiceHelper():
             return True
         except Exception as e:
             await session.rollback()
+            raise e
+
+    async def _delete_users(self, delete_data: BatchDeleteRequest, session: AsyncSession) -> None:
+        """Helper to delete multiple users from the database in batch
+
+        This method efficiently deletes multiple users by:
+        1. Parsing identifiers (emails and UUIDs)
+        2. Deleting all matching users in a single database operation
+
+        Args:
+            delete_data (BatchDeleteRequest): The identifiers (emails or UUIDs) of users to delete
+            session (AsyncSession): The database session
+
+        Returns:
+            None: Always returns None (204 No Content), even if users don't exist
+        """
+        identifiers = delete_data.identifiers
+
+        if not identifiers:
+            return
+
+        # Step 1: Separate emails from UUIDs
+        emails = []
+        user_ids = []
+
+        for identifier in identifiers:
+            if "@" in identifier:
+                # It's an email
+                emails.append(identifier)
+            else:
+                # Try to parse as UUID
+                try:
+                    user_id = uuid.UUID(identifier)
+                    user_ids.append(user_id)
+                except ValueError:
+                    # Invalid UUID format - skip silently (don't throw error)
+                    logger.warning(
+                        f"Invalid UUID format in batch delete: {identifier}")
+                    continue
+
+        # Step 2: Build OR conditions for deletion
+        conditions = []
+        if emails:
+            conditions.append(User.email.in_(emails))
+        if user_ids:
+            conditions.append(User.id.in_(user_ids))
+
+        # If no valid identifiers, return early
+        if not conditions:
+            return
+
+        # Step 3: Delete all matching users in a single operation
+        # Use OR to combine email and UUID conditions
+        from sqlalchemy import or_
+        statement = delete(User).where(or_(*conditions))
+
+        try:
+            await session.exec(statement)
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Error during batch delete: {e}")
             raise e
 
     async def _update_user(self, session: AsyncSession, where_clause, update_data: dict) -> User | None:

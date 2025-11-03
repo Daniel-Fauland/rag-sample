@@ -2,7 +2,7 @@ import uuid
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Sequence
 from database.schemas.users import User
-from models.user.request import SignupRequest, BatchSignupRequest
+from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest
 from models.user.response import UserModel, BatchSignupResponseBase
 from core.user.helper import ServiceHelper
 
@@ -127,6 +127,18 @@ class UserService:
             bool: True if user was deleted, False if user was not found
         """
         return await service_helper._delete_user(session=session, where_clause=User.email == email)
+
+    async def delete_users(self, delete_data: BatchDeleteRequest, session: AsyncSession) -> None:
+        """Delete multiple users from the database in batch
+
+        Args:
+            delete_data (BatchDeleteRequest): The identifiers (emails or UUIDs) of users to delete
+            session: Database session
+
+        Returns:
+            None: Always returns None (204 No Content), even if users don't exist
+        """
+        return await service_helper._delete_users(delete_data=delete_data, session=session)
 
     async def update_user(self, id: uuid.UUID, update_data: dict, session: AsyncSession) -> User | None:
         """Update a user in the database by their unique identifier.

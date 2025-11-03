@@ -7,7 +7,7 @@ from core.user.service import UserService
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from auth.auth import get_current_user, check_ownership_permissions
-from models.user.request import SignupRequest, BatchSignupRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
+from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
 from models.user.response import SignupResponse, BatchSignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
@@ -29,10 +29,17 @@ refresh_token_bearer = RefreshTokenBearer()
 limiter = Limiter(key_func=get_remote_address)
 
 # Permissions
+resource = "user"
 read_user_me = PermissionChecker(
-    [Permission(type=Type.read, resource="user", context=Context.me)])
+    [Permission(type=Type.read, resource=resource, context=Context.me)])
 read_user_all = PermissionChecker(
-    [Permission(type=Type.read, resource="user", context=Context.all)])
+    [Permission(type=Type.read, resource=resource, context=Context.all)])
+create_user_all = PermissionChecker(
+    [Permission(type=Type.create, resource=resource, context=Context.all)]
+)
+delete_user_all = PermissionChecker(
+    [Permission(type=Type.delete, resource=resource, context=Context.all)]
+)
 
 
 @user_router.post("", status_code=status.HTTP_201_CREATED, response_model=SignupResponse)
@@ -55,9 +62,8 @@ async def signup(request: Request, user_data: SignupRequest, session: AsyncSessi
     return SignupResponse(email=new_user.email, success=True)
 
 
-@user_router.post("/batch", status_code=status.HTTP_201_CREATED, response_model=BatchSignupResponse)
-@limiter.limit(f"{config.rate_limit_unprotected_routes}/minute")
-async def batch_signup(request: Request, user_data: BatchSignupRequest, session: AsyncSession = Depends(get_session)):
+@user_router.post("/batch-signup", status_code=status.HTTP_201_CREATED, response_model=BatchSignupResponse)
+async def batch_signup(user_data: BatchSignupRequest, session: AsyncSession = Depends(get_session), _: bool = Depends(create_user_all)):
     """Create new users in the database <br />
 
     Args: <br />
@@ -68,6 +74,25 @@ async def batch_signup(request: Request, user_data: BatchSignupRequest, session:
     """
     results = await service.create_users(user_data, session)
     return BatchSignupResponse(result=results)
+
+
+@user_router.post("/batch-delete", status_code=status.HTTP_204_NO_CONTENT)
+async def batch_delete(delete_data: BatchDeleteRequest,
+                       session: AsyncSession = Depends(get_session),
+                       _: bool = Depends(delete_user_all)):
+    """Delete multiple users from the database by their emails or UUIDs <br />
+
+    Args: <br />
+        delete_data (BatchDeleteRequest): List of user identifiers (emails or UUIDs) to delete <br />
+
+    Returns: <br />
+        204 No Content: Users successfully deleted (or didn't exist) <br />
+
+    Note: <br />
+        This endpoint does not return an error if a user doesn't exist. <br />
+        It silently ignores non-existent users and invalid UUIDs. <br />
+    """
+    await service.delete_users(delete_data, session)
 
 
 @user_router.post("/login", status_code=status.HTTP_201_CREATED, response_model=SigninResponse)
@@ -282,9 +307,9 @@ async def get_specific_user(id: str = Path(..., description="The user email or u
         current_user=current_user,
         target_id=id,
         own_data_permissions=[Permission(
-            type="read", resource="user", context="me")],
+            type="read", resource=resource, context="me")],
         other_data_permissions=[Permission(
-            type="read", resource="user", context="all")]
+            type="read", resource=resource, context="all")]
     )
 
     # Now proceed with the database query
@@ -321,9 +346,9 @@ async def update_user(id: str = Path(..., description="The user email or uuid", 
         current_user=current_user,
         target_id=id,
         own_data_permissions=[Permission(
-            type="update", resource="user", context="me")],
+            type="update", resource=resource, context="me")],
         other_data_permissions=[Permission(
-            type="update", resource="user", context="all")]
+            type="update", resource=resource, context="all")]
     )
 
     # Convert Pydantic model to dict, excluding None values
@@ -362,9 +387,9 @@ async def delete_user(id: str = Path(..., description="The user email or uuid", 
         current_user=current_user,
         target_id=id,
         own_data_permissions=[Permission(
-            type="delete", resource="user", context="me")],
+            type="delete", resource=resource, context="me")],
         other_data_permissions=[Permission(
-            type="delete", resource="user", context="all")]
+            type="delete", resource=resource, context="all")]
     )
 
     # Now proceed with the database deletion

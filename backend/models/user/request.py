@@ -51,6 +51,11 @@ class BatchSignupRequest(BaseModel):
     users: list[SignupRequest]
 
 
+class BatchDeleteRequest(BaseModel):
+    identifiers: list[str] = Field(..., description="List of user emails or UUIDs to delete", examples=[
+        ["john.doe@example.com", "0198c7ff-7032-7649-88f0-438321150e2c"]])
+
+
 class LoginRequest(UserCommonModel):
     password: str = Field(..., examples=["Mysecretpassword99"])
 

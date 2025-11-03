@@ -40,7 +40,7 @@ async def test_batch_signup_successful(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
     data = response.json()
 
     # Assertions
@@ -95,7 +95,7 @@ async def test_batch_signup_single_user(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
     data = response.json()
 
     # Assertions
@@ -143,7 +143,7 @@ async def test_batch_signup_duplicate_within_batch(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
     data = response.json()
 
     # Assertions
@@ -214,7 +214,7 @@ async def test_batch_signup_existing_user_in_database(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
     data = response.json()
 
     # Assertions
@@ -279,7 +279,7 @@ async def test_batch_signup_all_existing_users(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
     data = response.json()
 
     # Assertions
@@ -316,7 +316,7 @@ async def test_batch_signup_invalid_password(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
 
     # Assertions - should get validation error
     assert response.status_code == 422
@@ -346,7 +346,7 @@ async def test_batch_signup_missing_field(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
 
     # Assertions - should get validation error
     assert response.status_code == 422
@@ -373,7 +373,7 @@ async def test_batch_signup_invalid_email(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
 
     # Assertions - should get validation error
     assert response.status_code == 422
@@ -387,7 +387,7 @@ async def test_batch_signup_empty_list(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
 
     # Should return 201 with empty results (or 429 if rate limited)
     # When rate limited, we accept it as the endpoint is working correctly
@@ -425,7 +425,7 @@ async def test_batch_signup_mixed_valid_invalid(client, db_session):
     }
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
 
     # Should get validation error, no users should be created
     assert response.status_code == 422
@@ -454,7 +454,7 @@ async def test_batch_signup_large_batch(client, db_session):
     payload = {"users": users}
 
     # Perform POST request
-    response = await client.post("/users/batch", json=payload)
+    response = await client.post("/users/batch-signup", json=payload)
 
     # Handle rate limiting gracefully
     if response.status_code == 429:
