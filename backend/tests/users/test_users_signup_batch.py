@@ -3,13 +3,18 @@ import uuid
 from sqlmodel import select
 from database.schemas.users import User
 from utils.user import UserHelper
+from tests.test_helper import TestHelper
 
 user_helper = UserHelper()
+test_helper = TestHelper()
 
 
 @pytest.mark.asyncio
 async def test_batch_signup_successful(client, db_session):
     """Test batch user signup with valid data for multiple users"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     # Generate unique emails for each test run
     unique_email_1 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     unique_email_2 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
@@ -39,8 +44,9 @@ async def test_batch_signup_successful(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
     data = response.json()
 
     # Assertions
@@ -81,6 +87,9 @@ async def test_batch_signup_successful(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_single_user(client, db_session):
     """Test batch signup with a single user"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     unique_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
 
     payload = {
@@ -94,8 +103,9 @@ async def test_batch_signup_single_user(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
     data = response.json()
 
     # Assertions
@@ -116,6 +126,9 @@ async def test_batch_signup_single_user(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_duplicate_within_batch(client, db_session):
     """Test batch signup when duplicate emails exist within the same batch"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     unique_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     other_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
 
@@ -142,8 +155,9 @@ async def test_batch_signup_duplicate_within_batch(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
     data = response.json()
 
     # Assertions
@@ -182,6 +196,9 @@ async def test_batch_signup_duplicate_within_batch(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_existing_user_in_database(client, db_session):
     """Test batch signup when some users already exist in the database"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     # Create an existing user first
     existing_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     new_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
@@ -213,8 +230,9 @@ async def test_batch_signup_existing_user_in_database(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
     data = response.json()
 
     # Assertions
@@ -242,6 +260,9 @@ async def test_batch_signup_existing_user_in_database(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_all_existing_users(client, db_session):
     """Test batch signup when all users already exist in the database"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     # Create existing users first
     email_1 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     email_2 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
@@ -278,8 +299,9 @@ async def test_batch_signup_all_existing_users(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
     data = response.json()
 
     # Assertions
@@ -295,6 +317,9 @@ async def test_batch_signup_all_existing_users(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_invalid_password(client, db_session):
     """Test batch signup with invalid password in one of the users"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     unique_email_1 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     unique_email_2 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
 
@@ -315,8 +340,9 @@ async def test_batch_signup_invalid_password(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
 
     # Assertions - should get validation error
     assert response.status_code == 422
@@ -325,6 +351,9 @@ async def test_batch_signup_invalid_password(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_missing_field(client, db_session):
     """Test batch signup with missing required field"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     unique_email_1 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     unique_email_2 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
 
@@ -345,8 +374,9 @@ async def test_batch_signup_missing_field(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
 
     # Assertions - should get validation error
     assert response.status_code == 422
@@ -355,6 +385,9 @@ async def test_batch_signup_missing_field(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_invalid_email(client, db_session):
     """Test batch signup with invalid email format"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     payload = {
         "users": [
             {
@@ -372,8 +405,9 @@ async def test_batch_signup_invalid_email(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
 
     # Assertions - should get validation error
     assert response.status_code == 422
@@ -382,12 +416,16 @@ async def test_batch_signup_invalid_email(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_empty_list(client, db_session):
     """Test batch signup with empty users list"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     payload = {
         "users": []
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
 
     # Should return 201 with empty results (or 429 if rate limited)
     # When rate limited, we accept it as the endpoint is working correctly
@@ -403,6 +441,9 @@ async def test_batch_signup_empty_list(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_mixed_valid_invalid(client, db_session):
     """Test batch signup with a mix of valid users and users with validation errors"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     # This test ensures that validation happens before database operations
     unique_email_1 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
     unique_email_2 = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
@@ -424,8 +465,9 @@ async def test_batch_signup_mixed_valid_invalid(client, db_session):
         ]
     }
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
 
     # Should get validation error, no users should be created
     assert response.status_code == 422
@@ -440,6 +482,9 @@ async def test_batch_signup_mixed_valid_invalid(client, db_session):
 @pytest.mark.asyncio
 async def test_batch_signup_large_batch(client, db_session):
     """Test batch signup with a larger number of users"""
+    # Login as admin user (has create:user:all permission)
+    admin_data, _ = await test_helper.login_user_with_type(client, db_session, "admin", unique=True)
+
     # Create 5 users (reduced from 10 to avoid rate limiting in rapid test runs)
     users = []
     for i in range(5):
@@ -453,8 +498,9 @@ async def test_batch_signup_large_batch(client, db_session):
 
     payload = {"users": users}
 
-    # Perform POST request
-    response = await client.post("/users/batch-signup", json=payload)
+    # Perform POST request with admin authorization
+    headers = {"Authorization": f"Bearer {admin_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
 
     # Handle rate limiting gracefully
     if response.status_code == 429:
@@ -481,3 +527,70 @@ async def test_batch_signup_large_batch(client, db_session):
         user = result.first()
         assert user is not None
         assert user.email == user_data["email"]
+
+
+@pytest.mark.asyncio
+async def test_batch_signup_insufficient_permissions(client, db_session):
+    """Test batch signup fails when user doesn't have create:user:all permission"""
+    # Login as regular user (has read:user:all but NOT create:user:all permission)
+    user_data, _ = await test_helper.login_user_with_type(client, db_session, "normal", unique=True)
+
+    unique_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
+
+    payload = {
+        "users": [
+            {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": unique_email,
+                "password": "Strongpassword123-"
+            }
+        ]
+    }
+
+    # Perform POST request with regular user authorization (insufficient permissions)
+    headers = {"Authorization": f"Bearer {user_data['access_token']}"}
+    response = await client.post("/users/batch-signup", json=payload, headers=headers)
+    response_data = response.json()
+
+    # Assertions - should get forbidden error
+    assert response.status_code == 403
+    assert "message" in response_data
+    assert "error_code" in response_data
+    assert "solution" in response_data
+    assert response_data["error_code"] == "105_insufficient_permissions"
+
+    # Verify user was NOT created in the database
+    statement = select(User).where(User.email == unique_email)
+    result = await db_session.exec(statement)
+    user = result.first()
+    assert user is None
+
+
+@pytest.mark.asyncio
+async def test_batch_signup_no_authentication(client, db_session):
+    """Test batch signup fails when no authentication token is provided"""
+    unique_email = f"test_user_{uuid.uuid4().hex[:8]}@example.com"
+
+    payload = {
+        "users": [
+            {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": unique_email,
+                "password": "Strongpassword123-"
+            }
+        ]
+    }
+
+    # Perform POST request without authorization header
+    response = await client.post("/users/batch-signup", json=payload)
+
+    # Assertions - should get forbidden error (403 when no token provided)
+    assert response.status_code == 403
+
+    # Verify user was NOT created in the database
+    statement = select(User).where(User.email == unique_email)
+    result = await db_session.exec(statement)
+    user = result.first()
+    assert user is None
