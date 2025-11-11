@@ -115,6 +115,13 @@ You can simply run the tests by calling this method from within the `backend/` d
 uv run tests/run_tests.py
 ```
 
+You can also only test speecific folders / files like this:
+
+```
+uv run tests/run_tests.py tests/test/
+uv run tests/run_tests.py tests/health/test_healthcheck.py
+```
+
 Keep in mind that every test file within the [tests](./backend/tests/) directory must start with the prefix `test_` otherwise it won't be picked up by the `pytest` library.
 
 > [!Tip]
@@ -135,6 +142,7 @@ Here is an overview about the environment variables in your `.env` file:
 | Environment Settings | IS_DOCKER           | True                               | Whether the backend runs within a docker container                                  |                                                                                   | NO        |
 | Performance Settings | THREAD_POOL         | 80                                 | The amount of threads that can be open concurrently for each worker                 | [More info](https://www.starlette.io/threadpool/)                                 | NO        |
 | Performance Settings | WORKERS             | 4                                  | The amount of workers the uvicorn server uses                                       | Ideally this number is ~amount of CPU threads (not cores) for optimal scalability | NO        |
+| Test Settings        | TEST_LOGGING_LEVEL  | WARNING                            | The Logging level for the integration tests                                         | Must be either DEBUG, INFO, WARNING, ERROR, CRITICAL                              | NO        |
 
 > [!Note]
 > Variables are only mandatory if **no default value** exists.

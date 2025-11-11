@@ -60,8 +60,14 @@ class Settings(BaseSettings):
         description="The amount of workers the uvicorn server uses."
     )
 
+    # --- Test Settings ---
+    test_logging_level: str = Field(
+        default="WARNING",
+        description="Logging level for the application"
+    )
+
     # --- Validation methods ---
-    @field_validator("logging_level")
+    @field_validator("logging_level", "test_logging_level")
     @classmethod
     def validate_logging_level(cls, v: str) -> str:
         """Validate logging level is a valid Python logging level."""
