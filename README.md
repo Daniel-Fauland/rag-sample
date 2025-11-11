@@ -13,21 +13,29 @@ A production-ready FastAPI template that accelerates your backend development wi
 
 Perfect for teams and developers who want to build production-grade FastAPI applications without compromising on quality or spending time on initial setup.
 
+> [!TIP]
+>
+> **New here?** Check out the [Quick Start Guide](./backend/QUICKSTART.md) for a condensed getting-started experience!
+
 **Content Overview**
 
 - [Feature Overview](#feature-overview)
+- [Quick Start](#quick-start)
 - [Prerequisites](#prerequisites)
 - [Installation & Setup](#installation--setup)
-  - [Postgres Database Setup](#postgres-database-setup)
-    - [Local Postgres DB](#local-postgres-db)
-    - [Online Postgres DB](#online-postgres-db)
-  - [Database Migrations](#database-migrations)
-  - [Redis Database setup](#redis-database-setup)
-    - [Local Redis DB setup](#local-redis-db-setup)
-    - [Online Redis DB setup](#online-redis-db-setup)
-  - [Run the Backend](#run-the-backend)
-    - [Run Locally](#run-locally)
-    - [Run with Docker](#run-with-docker)
+  - [Automated Setup (Recommended)](#automated-setup-recommended)
+  - [Manual Setup (Advanced)](#manual-setup-advanced)
+    - [Postgres Database Setup](#postgres-database-setup)
+      - [Local Postgres DB](#local-postgres-db)
+      - [Online Postgres DB](#online-postgres-db)
+    - [Database Migrations](#database-migrations)
+    - [Redis Database setup](#redis-database-setup)
+      - [Local Redis DB setup](#local-redis-db-setup)
+      - [Online Redis DB setup](#online-redis-db-setup)
+- [Running the Application](#running-the-application)
+  - [Development Mode](#development-mode)
+  - [Docker Mode](#docker-mode)
+- [Common Commands](#common-commands)
 - [Integration Tests](#integration-tests)
 - [Env Variables Overview](#env-variables-overview)
 
@@ -54,48 +62,98 @@ This sample provides a FastAPI backend with the following features:
 - [x] Redis Database integration. See [databse/redis.py](./backend/database/redis.py)
 - [x] Using Redis for TTL based token blacklisting to handle JWT invalidation. See [auth/auth.py](./backend/auth/auth.py)
 - [x] IP based rate limiting on individual api routes. See [api/health/router.py](./backend/api/health/router.py)
+- [x] Streamlined setup with Makefile and Docker Compose for easy development
 
-> TODO: Integration test using test db <br/>
-> TODO: Mock KeyVault env values <br />
-> TODO: Setup shell script for postgres, redis and ALL (pg, redis & be) or maybe MAKEFILE?
+> TODO: Mock KeyVault env values
+
+## Quick Start
+
+Get up and running in under 5 minutes:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Daniel-Fauland/rag-sample.git
+cd rag-sample/backend
+
+# 2. Run the automated setup (installs uv, creates .env, starts databases, runs migrations)
+make setup
+
+# 3. Update your JWT secret in .env
+# Edit .env and set JWT_SECRET to a secure random string (at least 32 bytes)
+
+# 4. Start the FastAPI backend
+make run
+```
+
+That's it! 🎉 Your API is now running at [http://localhost:8000](http://localhost:8000)
+
+**What `make setup` does:**
+
+- ✅ Installs `uv` package manager (if not already installed)
+- ✅ Creates `.env` file from template
+- ✅ Starts Postgres and Redis databases in Docker
+- ✅ Waits for databases to be healthy
+- ✅ Runs all database migrations
+- ✅ Inserts initial data (including 2 test users)
+
+**Default test users** (available after setup):
+| Email | Password | Role |
+| ----------------- | ------------- | ----- |
+| admin@example.com | Adminpassword | admin |
+| user@example.com | Userpassword | user |
+
+> [!TIP]
+> Run `make help` to see all available commands!
 
 ## Prerequisites
 
-- Clone this git repo
-  ```
-  git clone https://github.com/Daniel-Fauland/rag-sample.git
-  ```
-- The python backend uses [uv](https://github.com/astral-sh/uv) as a package manager instead of pip / conda.
+**Required:**
 
-  To install `uv` follow these steps:
+- [Docker](https://www.docker.com/) installed and running
+- Git for cloning the repository
 
-  - **MacOS / Linux**:
+**Optional (auto-installed by `make setup`):**
 
-  ```
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
+- [uv](https://github.com/astral-sh/uv) package manager (faster alternative to pip)
 
-  - **Windows**:
-
-  ```
-  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-  ```
-
-- Create a `.env` file from the provided template and fill out all placeholder values with your credentials
-  ```
-  cd backend && cp .env.example .env
-  ```
-- You need a PostgresDB database. The database can be hosted locally or on the cloud.
-- After you set up your database make sure to run the alembic migrations to create the necessary tables and fill with inital data.
-- You need to set up a Redis database. The redis db can be hosted locally or on the cloud.
+> [!NOTE]
+> The `make setup` command will automatically install `uv` if it's not already available. On MacOS/Linux, it uses the official installer script. Windows users should install `uv` manually before running setup:
+>
+> ```powershell
+> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+> ```
 
 ## Installation & Setup
 
-In order to install & run the application you need to do the following steps:
+### Automated Setup (Recommended)
 
-- Setup up postgres database ([local](#local-postgres-db) or [online](#online-postgres-db))
-- Run database migrations in order to create the necessary tables and insert inital data
-- Install & run the backend ([local](#run-the-backend-locally) or [docker](#run-the-backend-with-docker))
+The easiest way to get started is using the provided Makefile commands (run from `backend/` directory):
+
+```bash
+cd backend
+
+# One-command setup (creates .env, starts databases, runs migrations)
+make setup
+
+# Start the backend
+make run
+```
+
+That's it! The application handles:
+
+- ✅ Environment file creation
+- ✅ Database provisioning (Postgres + Redis in Docker)
+- ✅ Database migrations
+- ✅ Initial data seeding
+
+**Important:** After running `make setup`, edit `.env` and set your `JWT_SECRET` to a secure random string (at least 32 bytes).
+
+> [!TIP]
+> See all available commands with `make help`
+
+### Manual Setup (Advanced)
+
+If you prefer manual control or want to use cloud-hosted databases, follow these steps:
 
 ### Postgres Database Setup
 
@@ -340,87 +398,168 @@ REDIS_PASSWORD="your-redis-password"
 > [!Note]
 > Make sure to check any potential ip/firewall restrictions that might block your connection.
 
-### Run the Backend
+## Running the Application
 
-#### Run Locally
+### Development Mode
 
-Make sure you have fulfilled all the prerequisites before proceeding. These are: <br/>
+**Recommended for local development** - FastAPI runs locally with hot-reload, databases in Docker:
 
-1. Setting up a postgres database
-2. Creating and configuring the `.env` file
-3. Running the database migrations
-4. Setting up a redis database
+```bash
+# Start databases (if not already running)
+make db-start
 
-In order to run a python project using `uv` simply run the following command within the `backend/` directory:
-
-```
-uv run main.py
+# Start FastAPI backend
+make run
 ```
 
-This will start the fastapi backend. It can be accessed in the browser by going to this url: [localhost:8000](http://localhost:8000/) <br/>
-Swagger docs are available at: [localhost:8000/docs](http://localhost:8000/docs)
+The backend will be available at:
 
-> [!Tip]
-> If you want to link your VSCode interpreter to the created venv for proper syntax highlighting follow these steps:
+- API: [http://localhost:8000](http://localhost:8000)
+- Swagger Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+> [!TIP] > **VSCode Python Interpreter Setup:**
 >
-> 1. Run the backend at least once to create the `.venv` folder within the backend
-> 2. Navigate to `backend/.venv/bin` and copy the path of the python binary
-> 3. Open the VSC Command Palette CMD + SHIFT + P (or CTRL + SHIFT + P for Windows) and enter the option `Python: Select Interpreter`
-> 4. Click on `Enter interpreter path...` and paste the python binary path
+> 1. Run the backend at least once to create the `.venv` folder
+> 2. Open Command Palette (CMD/CTRL + SHIFT + P)
+> 3. Select `Python: Select Interpreter`
+> 4. Choose `Enter interpreter path...`
+> 5. Navigate to `backend/.venv/bin/python` (or `backend/.venv/Scripts/python.exe` on Windows)
 
-#### Run With Docker
+### Docker Mode
 
-In order to use this application with docker make sure [docker](https://www.docker.com/) is installed and running.
+**Run the entire stack in Docker** - Useful for production-like testing:
 
-Go to the `backend` folder in a new linux like terminal (For Windows: Use `git bash` for example) and run:
+```bash
+# Run entire stack (backend + databases) in Docker
+make run-docker
 
+# Or run in background
+make run-docker-bg
 ```
-./run_docker.sh
+
+This builds and runs everything in containers. The backend will be available at [http://localhost:8000](http://localhost:8000)
+
+To stop everything:
+
+```bash
+make stop
 ```
 
-Backend will run on [http://localhost:8000/](http://localhost:8000/)
+> [!NOTE]
+> When running in Docker mode, the backend uses the `backend/Dockerfile` and connects to databases via Docker networking.
 
-> [!Note]
-> In case you want to build & start the docker image manually instead of using the shell script simplly run the following commands:
->
-> Build: `docker build -t fastapi-server .` <br/>
-> Run: `docker run -p 8080:8080 -e IS_DOCKER=True -e DB_HOST=host.docker.internal fastapi-server`
+### Additional Tips
 
-#### Additional Tips
+**Testing specific functions without starting the full backend:**
 
-If you want to test a specific function/file without starting the backend or even having a dedicated API route for it you can do so by calling a specific file directly like this:
+You can run individual Python modules directly:
 
-```
+```bash
+cd backend
 uv run -m <folder>.<file>
 ```
 
-An example can be found [here](./backend/utils/user.py) to simply test the hashing functionality:
+Example - test password hashing functionality:
 
-```
+```bash
+cd backend
 uv run -m utils.user
 ```
 
+## Common Commands
+
+Here are the most frequently used commands (run from `backend/` directory):
+
+### Database Management
+
+```bash
+make db-start         # Start Postgres and Redis
+make db-stop          # Stop databases
+make db-restart       # Restart databases
+make db-logs          # View database logs
+make db-migrate       # Run migrations
+make db-status        # Check database status
+make postgres-cli     # Access Postgres CLI
+make redis-cli        # Access Redis CLI
+```
+
+### Development
+
+```bash
+make run              # Run FastAPI locally
+make dev              # Start DBs and get ready for development
+make test             # Run all tests
+make test-file FILE=tests/users/test_users.py  # Run specific test file
+```
+
+### Docker Operations
+
+```bash
+make run-docker       # Run entire stack in Docker (foreground)
+make run-docker-bg    # Run entire stack in Docker (background)
+make stop             # Stop all containers
+```
+
+### Utilities
+
+```bash
+make clean            # Clean up everything (containers, volumes, cache)
+make help             # Show all available commands
+```
+
+> [!TIP]
+> All Makefile commands include colored output and helpful status messages to guide you through the process.
+
 ## Integration Tests
 
-This backend sample also features Integration tests. This means that instead of testing only a specific method you can test an entire endpoint. Unit tests can also be added in the same way if needed. Under the hood the testing framework [pytest](https://docs.pytest.org/en/stable/) is used.
-You can simply run the tests by calling this method from within the `backend/` directory:
+This project includes comprehensive integration tests that test entire API endpoints (not just individual functions). The testing framework uses [pytest](https://docs.pytest.org/en/stable/) under the hood.
 
-```
-uv run tests/run_tests.py
-```
+### Running Tests
 
-You can also only test speecific folders / files like this:
+**Run all tests:**
 
-```
-uv run tests/run_tests.py tests/users/
-uv run tests/run_tests.py tests/roles/test_roles.py
+```bash
+make test
 ```
 
-Keep in mind that every test file within the [tests](./backend/tests/) directory must start with the prefix `test_` otherwise it won't be picked up by the `pytest` library.
+**Run specific test files or folders:**
 
-> [!Tip]
-> In case you need to execute any code before or after your tests you can simply edit the [run_tests.py](./backend/tests/run_tests.py) file and add your custom logic there. Placeholders have already been prepared. <br/>
-> If you are unfamiliar with writing tests have a look at [./test/test_test.py](./backend/tests/test/test_test.py)
+```bash
+# Test specific folder
+make test-file FILE=tests/users/
+
+# Test specific file
+make test-file FILE=tests/roles/test_roles.py
+```
+
+**Run tests directly:**
+
+```bash
+cd backend
+uv run tests/run_tests.py                             # All tests
+uv run tests/run_tests.py tests/users/                # Specific folder
+uv run tests/run_tests.py tests/roles/test_roles.py   # Specific file
+```
+
+### Important Notes
+
+- **Custom Test Runner**: This project uses a custom test wrapper (`tests/run_tests.py`) that:
+
+  - Patches environment variables to use a separate test database
+  - Tests Alembic migrations in isolation
+  - **Never run `pytest` directly** - always use the custom wrapper
+
+- **Test Database**: Tests automatically use a separate database (`pg_test_db` by default) to avoid interfering with your development data
+
+- **Naming Convention**: All test files must start with `test_` to be discovered by pytest
+
+- **Helper Functions**: Common test utilities are available in [tests/test_helper.py](./backend/tests/test_helper.py) (e.g., `login_user_with_type()`)
+
+> [!TIP]
+>
+> - For examples of well-structured tests, see [tests/test/test_test.py](./backend/tests/test/test_test.py)
+> - To add custom setup/teardown logic, edit [tests/run_tests.py](./backend/tests/run_tests.py) (placeholders provided)
 
 ## Env Variables Overview
 
