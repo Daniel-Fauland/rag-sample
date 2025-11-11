@@ -5,8 +5,8 @@ from sqlalchemy.orm import selectinload
 from database.schemas.users import User
 from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
-from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest
-from models.user.response import UserModel, BatchSignupResponseBase
+from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, BatchUserUpdateRequest
+from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from errors import UserInvalidPassword, InternalServerError
@@ -289,6 +289,136 @@ class ServiceHelper():
             return user
         except Exception as e:
             await session.rollback()
+            raise e
+
+    async def _update_users(self, update_data: BatchUserUpdateRequest, session: AsyncSession) -> list[BatchUpdateResponseBase]:
+        """Helper to update multiple users in the database in batch
+
+        This method efficiently updates multiple users by:
+        1. Parsing identifiers (emails and UUIDs) and validating update data
+        2. Fetching all matching users in a single query
+        3. Applying updates to all users in memory
+        4. Committing all changes in a single transaction
+
+        Args:
+            update_data (BatchUserUpdateRequest): The users to update with their respective changes
+            session (AsyncSession): The database session
+
+        Returns:
+            list[BatchUpdateResponseBase]: List of results for each user with identifier, success flag, and reason
+        """
+        results: list[BatchUpdateResponseBase] = []
+        users_to_update = update_data.users
+
+        if not users_to_update:
+            return results
+
+        # Step 1: Parse identifiers and prepare update data
+        emails = []
+        user_ids = []
+        identifier_to_updates = {}  # Map identifier to update data
+
+        for user_update in users_to_update:
+            identifier = user_update.identifier
+            update_dict = user_update.updates.model_dump(exclude_none=True)
+
+            # Check if any fields provided for update
+            if not update_dict:
+                results.append(
+                    BatchUpdateResponseBase(
+                        identifier=identifier,
+                        success=False,
+                        reason="No fields provided for update"
+                    )
+                )
+                continue
+
+            # Parse identifier
+            if "@" in identifier:
+                emails.append(identifier)
+                identifier_to_updates[identifier] = update_dict
+            else:
+                try:
+                    user_id = uuid.UUID(identifier)
+                    user_ids.append(user_id)
+                    identifier_to_updates[str(user_id)] = update_dict
+                except ValueError:
+                    results.append(
+                        BatchUpdateResponseBase(
+                            identifier=identifier,
+                            success=False,
+                            reason="Invalid UUID format"
+                        )
+                    )
+                    continue
+
+        # If no valid users to update, return early
+        if not emails and not user_ids:
+            return results
+
+        # Step 2: Fetch all matching users in a single query
+        from sqlalchemy import or_
+        conditions = []
+        if emails:
+            conditions.append(User.email.in_(emails))
+        if user_ids:
+            conditions.append(User.id.in_(user_ids))
+
+        statement = select(User).where(or_(*conditions))
+        result = await session.exec(statement)
+        users = result.all()
+
+        # Create a map of identifier to user for easy lookup
+        identifier_to_user = {}
+        for user in users:
+            identifier_to_user[user.email] = user
+            identifier_to_user[str(user.id)] = user
+
+        # Step 3: Apply updates to all users in memory
+        updated_identifiers = set()
+        current_time = datetime.now(timezone.utc)
+
+        try:
+            for identifier, update_dict in identifier_to_updates.items():
+                user = identifier_to_user.get(identifier)
+
+                if not user:
+                    results.append(
+                        BatchUpdateResponseBase(
+                            identifier=identifier,
+                            success=False,
+                            reason="User not found"
+                        )
+                    )
+                    continue
+
+                # Apply updates
+                for field, value in update_dict.items():
+                    if hasattr(user, field) and value is not None:
+                        setattr(user, field, value)
+
+                # Update modified_at timestamp
+                user.modified_at = current_time
+                updated_identifiers.add(identifier)
+
+            # Step 4: Commit all changes in a single transaction
+            await session.commit()
+
+            # Step 5: Add successful results for updated users
+            for identifier in updated_identifiers:
+                results.append(
+                    BatchUpdateResponseBase(
+                        identifier=identifier,
+                        success=True,
+                        reason=""
+                    )
+                )
+
+            return results
+
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"Error during batch update: {e}")
             raise e
 
     async def _get_user_role(self, role: str, session: AsyncSession) -> Role:

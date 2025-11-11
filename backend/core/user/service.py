@@ -2,8 +2,8 @@ import uuid
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Sequence
 from database.schemas.users import User
-from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest
-from models.user.response import UserModel, BatchSignupResponseBase
+from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, BatchUserUpdateRequest
+from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase
 from core.user.helper import ServiceHelper
 
 service_helper = ServiceHelper()
@@ -168,6 +168,18 @@ class UserService:
             User object if updated successfully, None if user was not found
         """
         return await service_helper._update_user(session=session, where_clause=User.email == email, update_data=update_data)
+
+    async def update_users(self, update_data: BatchUserUpdateRequest, session: AsyncSession) -> list[BatchUpdateResponseBase]:
+        """Update multiple users in the database in batch
+
+        Args:
+            update_data (BatchUserUpdateRequest): The users to update with their respective changes
+            session: Database session
+
+        Returns:
+            list[BatchUpdateResponseBase]: List of results for each user with identifier, success flag, and reason
+        """
+        return await service_helper._update_users(update_data=update_data, session=session)
 
     async def update_user_password(self, user: UserModel, old_password: str, new_password: str, session: AsyncSession) -> bool:
         """Update a user's password after verifying the old password.

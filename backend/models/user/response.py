@@ -81,6 +81,21 @@ class BatchSignupResponse(BaseModel):
     result: list[BatchSignupResponseBase]
 
 
+class BatchUpdateResponseBase(BaseModel):
+    """Response model for individual user update in batch operation"""
+    identifier: str = Field(..., description="The identifier (email or UUID) of the user", examples=[
+        "john.doe@example.com", "0198c7ff-7032-7649-88f0-438321150e2c"])
+    success: bool = Field(..., description="Whether the user was successfully updated", examples=[
+                          True])
+    reason: Optional[str] = Field(default="", description="The reason why an update failed", examples=[
+        "User not found", "No fields provided for update"])
+
+
+class BatchUpdateResponse(BaseModel):
+    """Response model for batch user update operation"""
+    result: list[BatchUpdateResponseBase]
+
+
 class SigninRefreshModelBase(BaseModel):
     access_token: str = Field(..., description="The access JWT", examples=[
         "eyJhbG..."])

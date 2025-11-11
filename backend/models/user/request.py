@@ -91,6 +91,20 @@ class UserUpdateRequest(BaseModel):
         return v.strip() if v is not None else v
 
 
+class BatchUserUpdateItem(BaseModel):
+    """Single user update item for batch operations"""
+    identifier: str = Field(..., description="User email or UUID to update", examples=[
+        "john.doe@example.com", "0198c7ff-7032-7649-88f0-438321150e2c"])
+    updates: UserUpdateRequest = Field(...,
+                                       description="Fields to update for this user")
+
+
+class BatchUserUpdateRequest(BaseModel):
+    """Request model for batch user updates"""
+    users: list[BatchUserUpdateItem] = Field(
+        ..., description="List of users to update with their respective changes")
+
+
 class PasswordUpdateRequest(BaseModel):
     """Request model for updating user password."""
     old_password: str = Field(..., description="The user's current password", examples=[

@@ -7,8 +7,8 @@ from core.user.service import UserService
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from auth.auth import get_current_user, check_ownership_permissions
-from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
-from models.user.response import SignupResponse, BatchSignupResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
+from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, BatchUserUpdateRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
+from models.user.response import SignupResponse, BatchSignupResponse, BatchUpdateResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
 from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID, XValueError
@@ -36,6 +36,9 @@ read_user_all = PermissionChecker(
     [Permission(type=Type.read, resource=resource, context=Context.all)])
 create_user_all = PermissionChecker(
     [Permission(type=Type.create, resource=resource, context=Context.all)]
+)
+update_user_all = PermissionChecker(
+    [Permission(type=Type.update, resource=resource, context=Context.all)]
 )
 delete_user_all = PermissionChecker(
     [Permission(type=Type.delete, resource=resource, context=Context.all)]
@@ -93,6 +96,27 @@ async def batch_delete(delete_data: BatchDeleteRequest,
         It silently ignores non-existent users and invalid UUIDs. <br />
     """
     await service.delete_users(delete_data, session)
+
+
+@user_router.post("/batch-edit", status_code=status.HTTP_200_OK, response_model=BatchUpdateResponse)
+async def batch_edit(update_data: BatchUserUpdateRequest,
+                     session: AsyncSession = Depends(get_session),
+                     _: bool = Depends(update_user_all)):
+    """Update multiple users in the database by their emails or UUIDs <br />
+
+    Args: <br />
+        update_data (BatchUserUpdateRequest): List of users with their identifiers and fields to update <br />
+
+    Returns: <br />
+        BatchUpdateResponse: A list of results for each user with identifier, success flag, and reason <br />
+
+    Note: <br />
+        - Supports partial updates (only provided fields will be updated) <br />
+        - Each user can have different fields updated <br />
+        - Returns detailed status for each user in the batch <br />
+    """
+    results = await service.update_users(update_data, session)
+    return BatchUpdateResponse(result=results)
 
 
 @user_router.post("/login", status_code=status.HTTP_201_CREATED, response_model=SigninResponse)
