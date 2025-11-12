@@ -10,6 +10,10 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
+# Helper to find uv executable (checks PATH, then common installation locations)
+# This ensures uv works even if it was just installed and not yet in PATH
+# Usage: UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); $$UV_CMD
+
 help: ## Show this help message
 	@echo "$(CYAN)Available commands:$(NC)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
@@ -27,7 +31,22 @@ install-uv: ## Install uv package manager if not already installed
 	else \
 		echo "$(YELLOW)Installing uv...$(NC)"; \
 		curl -LsSf https://astral.sh/uv/install.sh | sh; \
-		echo "$(GREEN)✓ uv installed successfully$(NC)"; \
+		UV_PATH=""; \
+		if [ -f "$$HOME/.local/bin/uv" ]; then \
+			UV_PATH="$$HOME/.local/bin"; \
+		elif [ -f "$$HOME/.cargo/bin/uv" ]; then \
+			UV_PATH="$$HOME/.cargo/bin"; \
+		fi; \
+		if [ -n "$$UV_PATH" ]; then \
+			export PATH="$$UV_PATH:$$PATH"; \
+			if command -v uv >/dev/null 2>&1; then \
+				echo "$(GREEN)✓ uv installed successfully and available in current session$(NC)"; \
+			else \
+				echo "$(YELLOW)⚠ uv installed but not in PATH. Please restart your shell or run: export PATH=\"$$UV_PATH:\$$PATH\"$(NC)"; \
+			fi; \
+		else \
+			echo "$(YELLOW)⚠ uv installation completed, but location not detected. Please restart your shell.$(NC)"; \
+		fi; \
 	fi
 
 check-docker: ## Check if Docker is installed and running
@@ -94,23 +113,27 @@ db-status: ## Show database container status
 
 db-migrate: ## Run all database migrations (upgrade to latest)
 	@echo "$(CYAN)Running database migrations...$(NC)"
-	@uv run alembic upgrade head
+	@UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); \
+	$$UV_CMD run alembic upgrade head
 	@echo "$(GREEN)✓ Migrations complete$(NC)"
 
 db-migrate-down: ## Rollback all database migrations
 	@echo "$(YELLOW)Rolling back all migrations...$(NC)"
-	@uv run alembic downgrade base
+	@UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); \
+	$$UV_CMD run alembic downgrade base
 	@echo "$(GREEN)✓ Rollback complete$(NC)"
 
 db-migrate-history: ## Show migration history
-	@uv run alembic history
+	@UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); \
+	$$UV_CMD run alembic history
 
 db-migrate-create: ## Create a new migration (use MSG="your message")
 	@if [ -z "$(MSG)" ]; then \
 		echo "$(RED)✗ Please provide a message: make db-migrate-create MSG='your message'$(NC)"; \
 		exit 1; \
 	fi
-	@uv run alembic revision --autogenerate -m "$(MSG)"
+	@UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); \
+	$$UV_CMD run alembic revision --autogenerate -m "$(MSG)"
 	@echo "$(GREEN)✓ Migration created$(NC)"
 
 db-clean: ## Remove database volumes and containers (WARNING: deletes all data!)
@@ -142,7 +165,8 @@ redis-cli: ## Access Redis CLI
 
 run: ## Run FastAPI backend locally (databases must be running)
 	@echo "$(CYAN)Starting FastAPI backend...$(NC)"
-	@uv run main.py
+	@UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); \
+	$$UV_CMD run main.py
 
 run-docker: check-docker ## Run entire stack in Docker (backend + databases)
 	@echo "$(CYAN)Starting entire stack in Docker...$(NC)"
@@ -165,7 +189,8 @@ stop: ## Stop all running containers
 
 test: ## Run all tests
 	@echo "$(CYAN)Running all tests...$(NC)"
-	@uv run tests/run_tests.py
+	@UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); \
+	$$UV_CMD run tests/run_tests.py
 
 test-file: ## Run specific test file (use FILE=path/to/test.py)
 	@if [ -z "$(FILE)" ]; then \
@@ -173,7 +198,8 @@ test-file: ## Run specific test file (use FILE=path/to/test.py)
 		exit 1; \
 	fi
 	@echo "$(CYAN)Running tests in $(FILE)...$(NC)"
-	@uv run tests/run_tests.py $(FILE)
+	@UV_CMD=$$(command -v uv 2>/dev/null || ([ -f "$$HOME/.local/bin/uv" ] && echo "$$HOME/.local/bin/uv") || ([ -f "$$HOME/.cargo/bin/uv" ] && echo "$$HOME/.cargo/bin/uv") || echo "uv"); \
+	$$UV_CMD run tests/run_tests.py $(FILE)
 
 # ============================================================================
 # Utility Commands

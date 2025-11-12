@@ -86,4 +86,7 @@ if __name__ == "__main__":
                     log_level="info")
     else:
         uvicorn.run("main:app", host="0.0.0.0", port=config.fastapi_port,
-                    log_level="info", reload=True)
+                    log_level="info", reload=True,
+                    reload_excludes=["**/.venv/**", "**/__pycache__/**",
+                                     "**/*.pyc", "**/*.pyo", "**/*.pyd",
+                                     "**/.git/**", "**/*.log", "**/.pytest_cache/**"])
