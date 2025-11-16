@@ -1,7 +1,7 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Sequence
 from database.schemas.roles import Role
 from models.role.request import RoleCreateRequest
+from models.role.response import ListRoleModel
 from core.role.helper import RoleServiceHelper
 
 service_helper = RoleServiceHelper()
@@ -35,7 +35,7 @@ class RoleService:
         return await service_helper._get_roles(session=session, where_clause=Role.name == name, include_permissions=include_permissions)
 
     async def get_roles(self, session: AsyncSession, include_permissions: bool = False, order_by_field: str = "id",
-                        order_by_direction: str = "desc", limit: int = None) -> Sequence[Role]:
+                        order_by_direction: str = "desc", limit: int = 100, offset: int = 0) -> ListRoleModel:
         """Get all roles in the database
 
         Args:
@@ -43,14 +43,15 @@ class RoleService:
             include_permissions: Whether to eagerly load role permissions
             order_by_field (str, optional): The Field to order the data by. Defaults to Role.id.
             order_by_direction (str, optional): The order direction. Defaults to 'desc'.
-            limit (int): The maximum number of records to return. Defaults to None which means no limit
+            limit (int): The maximum number of records to return. Defaults to 100
+            offset (int): The number of records to offset/skip aka pagination
 
         Returns:
-            A sequence of Role objects
+            ListRoleModel
         """
         return await service_helper._get_roles(session=session, include_permissions=include_permissions,
                                                order_by_field=order_by_field, order_by_direction=order_by_direction,
-                                               limit=limit, multiple=True)
+                                               limit=limit, offset=offset, multiple=True)
 
     async def role_exists(self, name: str, session: AsyncSession) -> bool:
         """Check if a role already exists in the database

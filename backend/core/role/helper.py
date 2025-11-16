@@ -2,14 +2,15 @@ from datetime import datetime, timezone
 from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func
 from database.schemas.roles import Role
-from typing import Sequence
+from models.role.response import ListRoleModel
 
 
 class RoleServiceHelper:
     async def _get_roles(self, session: AsyncSession, where_clause=None, order_by_field: str = None,
-                         order_by_direction: str = "desc", limit: int = None, include_permissions: bool = False,
-                         multiple: bool = False) -> Role | Sequence[Role] | None:
+                         order_by_direction: str = "desc", limit: int = 100, offset: int = 0, include_permissions: bool = False,
+                         multiple: bool = False) -> Role | ListRoleModel | None:
         """Helper to get roles by a given where clause"""
         options = []
         if include_permissions:
@@ -31,16 +32,25 @@ class RoleServiceHelper:
             order_field = order_fields.get(order_by_field, Role.id)
             order_direction = desc if order_by_direction != "asc" else asc
             statement = statement.order_by(order_direction(order_field))
-        if limit:
+        if offset:
+            statement = statement.offset(offset)
+        if limit is not None:
             statement = statement.limit(limit)
         result = await session.exec(statement)
         if multiple:
+            # Get total count of roles matching the where clause (without limit/offset)
+            count_statement = select(func.count(Role.id))
+            if where_clause is not None:
+                count_statement = count_statement.where(where_clause)
+            count_result = await session.exec(count_statement)
+            total_roles = count_result.one()
+
             # Return all roles that match the sql query
             roles = result.all()
+            return ListRoleModel(limit=limit, offset=offset, total_roles=total_roles, current_roles=len(roles), roles=roles)
         else:
             # Return only the first role that matches the sql query
-            roles = result.first()
-        return roles
+            return result.first()
 
     async def _create_role(self, role_data: dict, session: AsyncSession) -> Role:
         """Helper to create a new role in the database"""

@@ -4,7 +4,7 @@ from core.role.service import RoleService
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
 from models.role.request import RoleCreateRequest, RoleUpdateRequest
-from models.role.response import RoleModelBase, RoleModel, RoleCreateResponse
+from models.role.response import RoleModelBase, RoleModel, RoleCreateResponse, ListRoleResponse, ListRoleWithPermissionsResponse
 from database.session import get_session
 from errors import RoleNotFound, RoleAlreadyExists, XValueError
 
@@ -45,48 +45,60 @@ async def create_role(role_data: RoleCreateRequest,
     return RoleCreateResponse(id=new_role.id, name=new_role.name, success=True)
 
 
-@role_router.get("", status_code=status.HTTP_200_OK, response_model=list[RoleModelBase])
+@role_router.get("", status_code=status.HTTP_200_OK, response_model=ListRoleResponse)
 async def get_all_roles(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
         order_by_direction: str = Query(
         None, description="Whether to sort the field asc or desc", example="desc"),
-        limit: int = Query(None,
-                           description="The maximum number of records to return"),
+        limit: int = Query(100,
+                           description="The maximum number of records to return",
+                           ge=1,
+                           le=500),
+        offset: int = Query(0,
+                            description="How many records to skip",
+                            ge=0),
         session: AsyncSession = Depends(get_session),
         _: bool = Depends(read_role_all)):
     """Get all roles in the database <br />
 
     Returns: <br />
-        list[RoleModelBase]: The role data without the associated permissions <br />
+        ListRoleResponse: The role data without the associated permissions with pagination metadata <br />
     """
     roles = await service.get_roles(session=session,
                                     include_permissions=False,
                                     order_by_field=order_by_field,
                                     order_by_direction=order_by_direction,
-                                    limit=limit)
+                                    limit=limit,
+                                    offset=offset)
 
     return roles
 
 
-@role_router.get("-with-permissions", status_code=status.HTTP_200_OK, response_model=list[RoleModel])
+@role_router.get("-with-permissions", status_code=status.HTTP_200_OK, response_model=ListRoleWithPermissionsResponse)
 async def get_all_roles_with_permissions(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
         order_by_direction: str = Query(
         None, description="Whether to sort the field asc or desc", example="desc"),
-        limit: int = Query(None,
-                           description="The maximum number of records to return"),
+        limit: int = Query(100,
+                           description="The maximum number of records to return",
+                           ge=1,
+                           le=500),
+        offset: int = Query(0,
+                            description="How many records to skip",
+                            ge=0),
         session: AsyncSession = Depends(get_session),
         _: bool = Depends(read_role_all)):
     """Get all roles in the database <br />
 
     Returns: <br />
-        list[RoleModel]: The role data including the associated permissions <br />
+        ListRoleWithPermissionsResponse: The role data including the associated permissions with pagination metadata <br />
     """
     roles = await service.get_roles(session=session,
                                     include_permissions=True,
                                     order_by_field=order_by_field,
                                     order_by_direction=order_by_direction,
-                                    limit=limit)
+                                    limit=limit,
+                                    offset=offset)
 
     return roles
 

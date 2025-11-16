@@ -18,15 +18,22 @@ async def test_get_all_roles_successful_as_regular_user(client, db_session):
         "Authorization": f"Bearer {user_data['access_token']}"
     }
     response = await client.get("/roles", headers=headers)
-    roles_data = response.json()
+    response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(roles_data, list)
+    assert isinstance(response_data, dict)
+    assert "roles" in response_data
+    assert "limit" in response_data
+    assert "offset" in response_data
+    assert "total_roles" in response_data
+    assert "current_roles" in response_data
+
+    roles_data = response_data["roles"]
     # There should exist at least 2 roles: [admin, user]
     assert len(roles_data) >= 2
 
-    # Check structure of returned users (UserModelBase - no roles)
+    # Check structure of returned roles (RoleModelBase - no permissions)
     for role in roles_data:
         assert "id" in role
         assert "name" in role
@@ -53,17 +60,21 @@ async def test_get_all_roles_successful_with_query_parameter(client, db_session)
     }
     order_by_field = "id"
     order_by_direction = "desc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/roles?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
-    roles_data = response.json()
+    response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(roles_data, list)
+    assert isinstance(response_data, dict)
+    assert "roles" in response_data
+
+    roles_data = response_data["roles"]
     # There should exist at least 2 roles: [admin, user]
     assert len(roles_data) >= 2
     # Should not exceed the limit
     assert len(roles_data) <= limit
+    assert response_data["limit"] == limit
 
     # Check whether the records are sorted correctly by id in descending order
     role_ids = [role["id"] for role in roles_data]
@@ -86,13 +97,16 @@ async def test_get_all_roles_successful_with_query_parameter(client, db_session)
     # --- Test ordering by name ---
     order_by_field = "name"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/roles?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
-    roles_data = response.json()
+    response_data = response.json()
 
     # Verify if roles are sorted alphabetically by name in ascending order
     assert response.status_code == 200
-    assert isinstance(roles_data, list)
+    assert isinstance(response_data, dict)
+    assert "roles" in response_data
+
+    roles_data = response_data["roles"]
     assert len(roles_data) >= 2
 
     role_names = [role["name"] for role in roles_data]
@@ -112,13 +126,18 @@ async def test_get_all_roles_successful_with_query_parameter(client, db_session)
     order_by_direction = "asc"
     limit = 1
     response = await client.get(f"/roles?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
-    roles_data = response.json()
+    response_data = response.json()
 
     # Verify there is only 1 result with the id of '1' (lowest id)
     assert response.status_code == 200
-    assert isinstance(roles_data, list)
+    assert isinstance(response_data, dict)
+    assert "roles" in response_data
+
+    roles_data = response_data["roles"]
     assert len(roles_data) == 1, "Should return exactly 1 role when limit=1"
     assert roles_data[0]["id"] == 1, "Should return the role with id=1 when ordering by id asc with limit=1"
+    assert response_data["limit"] == limit
+    assert response_data["current_roles"] == 1
 
 
 @pytest.mark.asyncio

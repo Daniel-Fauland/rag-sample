@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Sequence
+from database.schemas.roles import Role
 
 
 class RoleModelBase(BaseModel):
@@ -47,3 +48,23 @@ class RoleCreateResponse(BaseModel):
 class RoleUpdateResponse(BaseModel):
     message: str = Field(..., description="A status message about the role update",
                          examples=["Role updated successfully"])
+
+
+class ListRoleModel(BaseModel):
+    limit: int = Field(..., description="The maximum number of roles to be retrieved", examples=[
+                       25])
+    offset: int = Field(...,
+                        description="How many roles to skip", examples=[75])
+    total_roles: int = Field(..., description="The total number of roles in the db", examples=[
+        123])
+    current_roles: int = Field(..., description="The number of roles retrieved right now", examples=[
+        25])
+    roles: Sequence[Role] = Field(..., description="The actual role data")
+
+
+class ListRoleResponse(ListRoleModel):
+    roles: list[RoleModelBase] = Field(..., description="The actual role data")
+
+
+class ListRoleWithPermissionsResponse(ListRoleModel):
+    roles: list[RoleModel] = Field(..., description="The actual role data")
