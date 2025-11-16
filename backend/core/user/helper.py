@@ -2,11 +2,12 @@ from datetime import timedelta, datetime, timezone
 from sqlmodel import select, asc, desc, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func
 from database.schemas.users import User
 from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
 from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, BatchUserUpdateRequest
-from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase
+from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase, ListUserResponse
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from errors import UserInvalidPassword, InternalServerError
@@ -20,7 +21,7 @@ jwt_handler = JWTHandler()
 
 
 class ServiceHelper():
-    async def _get_users(self, session: AsyncSession, where_clause=None, order_by_field: str = None, order_by_direction: str = "desc", limit: int = None, include_roles: bool = False, include_permissions: bool = False, multiple: bool = False) -> User | None:
+    async def _get_users(self, session: AsyncSession, where_clause=None, order_by_field: str = None, order_by_direction: str = "desc", limit: int = 100, offset: int = 0, include_roles: bool = False, include_permissions: bool = False, multiple: bool = False) -> ListUserResponse | User | None:
         """Helper to get a user by a given where clause"""
         options = []
         if include_roles:
@@ -49,16 +50,25 @@ class ServiceHelper():
             order_field = order_fields.get(order_by_field, User.id)
             order_direction = desc if order_by_direction != "asc" else asc
             statement = statement.order_by(order_direction(order_field))
+        if offset:
+            statement = statement.offset(offset)
         if limit:
             statement = statement.limit(limit)
         result = await session.exec(statement)
         if multiple:
+            # Get total count of users matching the where clause (without limit/offset)
+            count_statement = select(func.count(User.id))
+            if where_clause is not None:
+                count_statement = count_statement.where(where_clause)
+            count_result = await session.exec(count_statement)
+            total_users = count_result.one()
+
             # Return all users that match the sql query
             users = result.all()
+            return ListUserResponse(limit=limit, offset=offset, total_users=total_users, current_users=len(users), users=users)
         else:
             # Return only the first user that matches the sql query
-            users = result.first()
-        return users
+            return result.first()
 
     async def _create_user(self, user_data: SignupRequest, session: AsyncSession) -> User:
         """Helper to create a new user in the database"""

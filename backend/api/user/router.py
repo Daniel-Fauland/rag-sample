@@ -8,7 +8,7 @@ from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from auth.auth import get_current_user, check_ownership_permissions
 from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, BatchUserUpdateRequest, LoginRequest, LogoutRequest, UserUpdateRequest, PasswordUpdateRequest
-from models.user.response import SignupResponse, BatchSignupResponse, BatchUpdateResponse, SigninResponse, RefreshResponse, UserModel, UserModelBase, PasswordUpdateResponse
+from models.user.response import SignupResponse, BatchSignupResponse, BatchUpdateResponse, SigninResponse, RefreshResponse, UserModel, PasswordUpdateResponse, ListUserResponse
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
 from errors import UserEmailExists, UserInvalidCredentials, UserNotFound, UserNotVerified, InvalidRefreshToken, InvalidUUID, XValueError
@@ -269,13 +269,18 @@ async def update_active_user_password(password_data: PasswordUpdateRequest,
     return PasswordUpdateResponse(message="Password changed successfully")
 
 
-@user_router.get("", status_code=status.HTTP_200_OK, response_model=list[UserModelBase])
+@user_router.get("", status_code=status.HTTP_200_OK, response_model=ListUserResponse)
 async def get_all_users(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
         order_by_direction: str = Query(
         None, description="Wheter to sort the field asc or desc", example="desc"),
-        limit: int = Query(None,
-                           description="The maximum number of records to return"),
+        limit: int = Query(100,
+                           description="The maximum number of records to return",
+                           ge=1,
+                           le=500),
+        offset: int = Query(0,
+                            description="How many records to skip",
+                            ge=0),
         session: AsyncSession = Depends(get_session),
         _: bool = Depends(read_user_all)):
     """Get all users in the database <br />
@@ -288,7 +293,8 @@ async def get_all_users(order_by_field: str = Query(
                                     include_permissions=False,
                                     order_by_field=order_by_field,
                                     order_by_direction=order_by_direction,
-                                    limit=limit)
+                                    limit=limit,
+                                    offset=offset)
 
     return users
 

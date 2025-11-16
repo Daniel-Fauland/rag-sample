@@ -1,9 +1,8 @@
 import uuid
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Sequence
 from database.schemas.users import User
 from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, BatchUserUpdateRequest
-from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase
+from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase, ListUserResponse
 from core.user.helper import ServiceHelper
 
 service_helper = ServiceHelper()
@@ -38,7 +37,7 @@ class UserService:
         """
         return await service_helper._get_users(session=session, where_clause=User.email == email, include_roles=include_roles, include_permissions=include_permissions)
 
-    async def get_users(self, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False, order_by_field: str = "id", order_by_direction: str = "desc", limit: int = None) -> Sequence[User]:
+    async def get_users(self, session: AsyncSession, include_roles: bool = False, include_permissions: bool = False, order_by_field: str = "id", order_by_direction: str = "desc", limit: int = 100, offset: int = 0) -> ListUserResponse:
         """Get all users in the database
 
         Args:
@@ -47,12 +46,13 @@ class UserService:
             include_permissions: Whether to eagerly load permissions for each role
             order_by_field (str, optional): The Field to order the data by. Defaults to User.id.
             order_by_direction (str, optional): The order direction. Defaults to 'desc'.
-            limit (int): The maximum number of records to return. Defaults no None which means no limit
+            limit (int): The maximum number of records to return. Defaults no 100
+            offset (int): The number of records to offset/skip aka pagination
 
         Returns:
-            A sequence of User objects
+            ListUserResponse
         """
-        return await service_helper._get_users(session=session, include_roles=include_roles, include_permissions=include_permissions, order_by_field=order_by_field, order_by_direction=order_by_direction, limit=limit, multiple=True)
+        return await service_helper._get_users(session=session, include_roles=include_roles, include_permissions=include_permissions, order_by_field=order_by_field, order_by_direction=order_by_direction, limit=limit, offset=offset, multiple=True)
 
     async def user_exists(self, email: str, session: AsyncSession) -> bool:
         """Check if a user already exists in the database

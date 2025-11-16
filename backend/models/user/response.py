@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Sequence
+from database.schemas.users import User
 
 
 class UserModelBase(BaseModel):
@@ -116,3 +117,15 @@ class RefreshResponse(SigninRefreshModelBase):
 class PasswordUpdateResponse(BaseModel):
     message: str = Field(..., description="A status message about the password change", examples=[
                          "Password changed successfully"])
+
+
+class ListUserResponse(BaseModel):
+    limit: int = Field(..., description="The maximum number of users to be retrieved", examples=[
+                       25])
+    offset: int = Field(...,
+                        description="How many users to skip", examples=[75])
+    total_users: int = Field(..., description="The total number of users in the db", examples=[
+        123])
+    current_users: int = Field(..., description="The number of users retrieved right now", examples=[
+        25])
+    users: Sequence[User] = Field(..., description="The actual user data")
