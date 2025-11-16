@@ -1,7 +1,7 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Sequence
 from database.schemas.permissions import Permission
 from models.permission.request import PermissionCreateRequest
+from models.permission.response import ListPermissionModel
 from core.permission.helper import PermissionServiceHelper
 
 service_helper = PermissionServiceHelper()
@@ -22,7 +22,7 @@ class PermissionService:
         return await service_helper._get_permissions(session=session, where_clause=Permission.id == id, include_roles=include_roles)
 
     async def get_permissions(self, session: AsyncSession, include_roles: bool = False, order_by_field: str = "id",
-                              order_by_direction: str = "desc", limit: int = None) -> Sequence[Permission]:
+                              order_by_direction: str = "desc", limit: int = 100, offset: int = 0) -> ListPermissionModel:
         """Get all permissions in the database
 
         Args:
@@ -30,14 +30,15 @@ class PermissionService:
             include_roles: Whether to eagerly load permission roles
             order_by_field (str, optional): The Field to order the data by. Defaults to Permission.id.
             order_by_direction (str, optional): The order direction. Defaults to 'desc'.
-            limit (int): The maximum number of records to return. Defaults to None which means no limit
+            limit (int): The maximum number of records to return. Defaults to 100
+            offset (int): The number of records to offset/skip aka pagination
 
         Returns:
-            A sequence of Permission objects
+            ListPermissionModel
         """
         return await service_helper._get_permissions(session=session, include_roles=include_roles,
                                                      order_by_field=order_by_field, order_by_direction=order_by_direction,
-                                                     limit=limit, multiple=True)
+                                                     limit=limit, offset=offset, multiple=True)
 
     async def permission_exists(self, type_value: str, resource: str, context: str, session: AsyncSession) -> bool:
         """Check if a permission already exists in the database

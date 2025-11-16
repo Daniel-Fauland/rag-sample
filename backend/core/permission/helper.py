@@ -2,14 +2,15 @@ from datetime import datetime, timezone
 from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func
 from database.schemas.permissions import Permission
-from typing import Sequence
+from models.permission.response import ListPermissionModel
 
 
 class PermissionServiceHelper:
     async def _get_permissions(self, session: AsyncSession, where_clause=None, order_by_field: str = None,
-                               order_by_direction: str = "desc", limit: int = None, include_roles: bool = False,
-                               multiple: bool = False) -> Permission | Sequence[Permission] | None:
+                               order_by_direction: str = "desc", limit: int = 100, offset: int = 0, include_roles: bool = False,
+                               multiple: bool = False) -> Permission | ListPermissionModel | None:
         """Helper to get permissions by a given where clause"""
         options = []
         if include_roles:
@@ -34,17 +35,26 @@ class PermissionServiceHelper:
             order_field = order_fields.get(order_by_field, Permission.id)
             order_direction = desc if order_by_direction != "asc" else asc
             statement = statement.order_by(order_direction(order_field))
-        if limit:
+        if offset:
+            statement = statement.offset(offset)
+        if limit is not None:
             statement = statement.limit(limit)
 
         result = await session.exec(statement)
         if multiple:
+            # Get total count of permissions matching the where clause (without limit/offset)
+            count_statement = select(func.count(Permission.id))
+            if where_clause is not None:
+                count_statement = count_statement.where(where_clause)
+            count_result = await session.exec(count_statement)
+            total_permissions = count_result.one()
+
             # Return all permissions that match the sql query
             permissions = result.all()
+            return ListPermissionModel(limit=limit, offset=offset, total_permissions=total_permissions, current_permissions=len(permissions), permissions=permissions)
         else:
             # Return only the first permission that matches the sql query
-            permissions = result.first()
-        return permissions
+            return result.first()
 
     async def _create_permission(self, permission_data: dict, session: AsyncSession) -> Permission:
         """Helper to create a new permission in the database"""

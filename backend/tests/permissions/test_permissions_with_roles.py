@@ -17,11 +17,18 @@ async def test_get_all_permissions_with_roles_successful_as_regular_user(client,
         "Authorization": f"Bearer {user_data['access_token']}"
     }
     response = await client.get("/permissions-with-roles", headers=headers)
-    permissions_data = response.json()
+    response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(permissions_data, list)
+    assert isinstance(response_data, dict)
+    assert "permissions" in response_data
+    assert "limit" in response_data
+    assert "offset" in response_data
+    assert "total_permissions" in response_data
+    assert "current_permissions" in response_data
+
+    permissions_data = response_data["permissions"]
     # There should exist multiple permissions
     assert len(permissions_data) >= 2
 
@@ -67,17 +74,21 @@ async def test_get_all_permissions_with_roles_successful_with_query_parameter(cl
     }
     order_by_field = "id"
     order_by_direction = "desc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/permissions-with-roles?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
-    permissions_data = response.json()
+    response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(permissions_data, list)
+    assert isinstance(response_data, dict)
+    assert "permissions" in response_data
+
+    permissions_data = response_data["permissions"]
     # There should exist multiple permissions
     assert len(permissions_data) >= 2
     # Should not exceed the limit
     assert len(permissions_data) <= limit
+    assert response_data["limit"] == limit
 
     # Check whether the records are sorted correctly by id in descending order
     permission_ids = [permission["id"] for permission in permissions_data]
@@ -115,13 +126,16 @@ async def test_get_all_permissions_with_roles_successful_with_query_parameter(cl
     # --- Test ordering by resource ---
     order_by_field = "resource"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/permissions-with-roles?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
-    permissions_data = response.json()
+    response_data = response.json()
 
     # Verify if permissions are sorted alphabetically by resource in ascending order
     assert response.status_code == 200
-    assert isinstance(permissions_data, list)
+    assert isinstance(response_data, dict)
+    assert "permissions" in response_data
+
+    permissions_data = response_data["permissions"]
     assert len(permissions_data) >= 2
 
     permission_resources = [permission["resource"]
@@ -134,14 +148,19 @@ async def test_get_all_permissions_with_roles_successful_with_query_parameter(cl
     order_by_direction = "asc"
     limit = 1
     response = await client.get(f"/permissions-with-roles?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
-    permissions_data = response.json()
+    response_data = response.json()
 
     # Verify there is only 1 result with the id of '1' (lowest id)
     assert response.status_code == 200
-    assert isinstance(permissions_data, list)
+    assert isinstance(response_data, dict)
+    assert "permissions" in response_data
+
+    permissions_data = response_data["permissions"]
     assert len(
         permissions_data) == 1, "Should return exactly 1 permission when limit=1"
     assert permissions_data[0]["id"] == 1, "Should return the permission with id=1 when ordering by id asc with limit=1"
+    assert response_data["limit"] == limit
+    assert response_data["current_permissions"] == 1
 
 
 @pytest.mark.asyncio

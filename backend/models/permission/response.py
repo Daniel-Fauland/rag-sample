@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Sequence
+from database.schemas.permissions import Permission
 from models.auth import Type, Context
 
 
@@ -52,3 +53,26 @@ class PermissionCreateResponse(BaseModel):
 class PermissionUpdateResponse(BaseModel):
     message: str = Field(..., description="A status message about the permission update",
                          examples=["Permission updated successfully"])
+
+
+class ListPermissionModel(BaseModel):
+    limit: int = Field(..., description="The maximum number of permissions to be retrieved", examples=[
+                       25])
+    offset: int = Field(...,
+                        description="How many permissions to skip", examples=[75])
+    total_permissions: int = Field(..., description="The total number of permissions in the db", examples=[
+        123])
+    current_permissions: int = Field(..., description="The number of permissions retrieved right now", examples=[
+        25])
+    permissions: Sequence[Permission] = Field(
+        ..., description="The actual permission data")
+
+
+class ListPermissionResponse(ListPermissionModel):
+    permissions: list[PermissionModelBase] = Field(
+        ..., description="The actual permission data")
+
+
+class ListPermissionWithRolesResponse(ListPermissionModel):
+    permissions: list[PermissionModel] = Field(
+        ..., description="The actual permission data")

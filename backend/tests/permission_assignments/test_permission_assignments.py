@@ -224,7 +224,8 @@ async def test_create_permission_assignment_as_admin(client, db_session):
 
     # Get all permissions to find one we can use
     perms_response = await client.get("/permissions", headers=headers)
-    all_permissions = perms_response.json()
+    perms_data = perms_response.json()
+    all_permissions = perms_data["permissions"]
     assert len(all_permissions) > 0, "Need at least one permission in the database"
 
     # Get existing assignments for the test role to find a permission not yet assigned
@@ -305,7 +306,8 @@ async def test_create_permission_assignment_duplicate(client, db_session):
 
     # Get an available permission
     perms_response = await client.get("/permissions", headers=headers)
-    all_permissions = perms_response.json()
+    perms_data = perms_response.json()
+    all_permissions = perms_data["permissions"]
     existing_response = await client.get(f"/permission-assignments?role_id={test_role['id']}", headers=headers)
     existing_assignments = existing_response.json()
     assigned_permission_ids = {a["permission_id"]
@@ -422,7 +424,8 @@ async def test_delete_permission_assignment_as_admin(client, db_session):
 
     # Get an available permission
     perms_response = await client.get("/permissions", headers=create_headers)
-    all_permissions = perms_response.json()
+    perms_data = perms_response.json()
+    all_permissions = perms_data["permissions"]
     existing_response = await client.get(f"/permission-assignments?role_id={test_role['id']}", headers=create_headers)
     existing_assignments = existing_response.json()
     assigned_permission_ids = {a["permission_id"]
@@ -551,7 +554,8 @@ async def test_permission_assignment_crud_lifecycle(client, db_session):
 
     # Get an available permission
     perms_response = await client.get("/permissions", headers=headers)
-    all_permissions = perms_response.json()
+    perms_data = perms_response.json()
+    all_permissions = perms_data["permissions"]
     existing_response = await client.get(f"/permission-assignments?role_id={test_role['id']}", headers=headers)
     existing_assignments = existing_response.json()
     assigned_permission_ids = {a["permission_id"]

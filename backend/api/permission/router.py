@@ -4,9 +4,10 @@ from core.permission.service import PermissionService
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
 from models.permission.request import PermissionCreateRequest, PermissionUpdateRequest
-from models.permission.response import PermissionModelBase, PermissionModel, PermissionCreateResponse
+from models.permission.response import PermissionModelBase, PermissionModel, PermissionCreateResponse, ListPermissionResponse, ListPermissionWithRolesResponse
 from database.session import get_session
 from errors import PermissionNotFound, PermissionAlreadyExists, XValueError
+from config import config
 
 
 permission_router = APIRouter()
@@ -56,48 +57,60 @@ async def create_permission(permission_data: PermissionCreateRequest,
     )
 
 
-@permission_router.get("", status_code=status.HTTP_200_OK, response_model=list[PermissionModelBase])
+@permission_router.get("", status_code=status.HTTP_200_OK, response_model=ListPermissionResponse)
 async def get_all_permissions(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
         order_by_direction: str = Query(
         None, description="Whether to sort the field asc or desc", example="desc"),
-        limit: int = Query(None,
-                           description="The maximum number of records to return"),
+        limit: int = Query(100,
+                           description="The maximum number of records to return",
+                           ge=1,
+                           le=config.default_api_pagination_limit),
+        offset: int = Query(0,
+                            description="How many records to skip",
+                            ge=0),
         session: AsyncSession = Depends(get_session),
         _: bool = Depends(read_permission_all)):
     """Get all permissions in the database <br />
 
     Returns: <br />
-        list[PermissionModelBase]: The permission data without the associated roles <br />
+        ListPermissionResponse: The permission data without the associated roles with pagination metadata <br />
     """
     permissions = await service.get_permissions(session=session,
                                                 include_roles=False,
                                                 order_by_field=order_by_field,
                                                 order_by_direction=order_by_direction,
-                                                limit=limit)
+                                                limit=limit,
+                                                offset=offset)
 
     return permissions
 
 
-@permission_router.get("-with-roles", status_code=status.HTTP_200_OK, response_model=list[PermissionModel])
+@permission_router.get("-with-roles", status_code=status.HTTP_200_OK, response_model=ListPermissionWithRolesResponse)
 async def get_all_permissions_with_roles(order_by_field: str = Query(
         None, description="The field to order the records by", example="id"),
         order_by_direction: str = Query(
         None, description="Whether to sort the field asc or desc", example="desc"),
-        limit: int = Query(None,
-                           description="The maximum number of records to return"),
+        limit: int = Query(100,
+                           description="The maximum number of records to return",
+                           ge=1,
+                           le=config.default_api_pagination_limit),
+        offset: int = Query(0,
+                            description="How many records to skip",
+                            ge=0),
         session: AsyncSession = Depends(get_session),
         _: bool = Depends(read_permission_all)):
     """Get all permissions in the database <br />
 
     Returns: <br />
-        list[PermissionModel]: The permission data including the associated roles <br />
+        ListPermissionWithRolesResponse: The permission data including the associated roles with pagination metadata <br />
     """
     permissions = await service.get_permissions(session=session,
                                                 include_roles=True,
                                                 order_by_field=order_by_field,
                                                 order_by_direction=order_by_direction,
-                                                limit=limit)
+                                                limit=limit,
+                                                offset=offset)
 
     return permissions
 
