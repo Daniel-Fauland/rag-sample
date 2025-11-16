@@ -44,6 +44,11 @@ class Settings(BaseSettings):
         description="How many requests a client (ip address) can make against the same API route per minute on unprotected routes"
     )
 
+    default_api_pagination_limit: int = Field(
+        default=500,
+        description="How many records the API allows to return for a given request"
+    )
+
     # --- Environment Settings ---
     backend_version: str = Field(
         default="0.0.1",
@@ -187,6 +192,29 @@ class Settings(BaseSettings):
     )
 
     # --- Validation methods ---
+    # - Validation helper -
+    @staticmethod
+    def _validate_positive_int_str(v: str, field_name: str) -> str:
+        """Validate value is a string representing int > 0. Raises helpful error."""
+        try:
+            int_v = int(v)
+            if int_v < 1:
+                raise ValueError
+        except (ValueError, TypeError):
+            if field_name == "rate_limit_unprotected_routes":
+                raise ValueError(
+                    f"invalid rate limit {color(v)}. Must be a valid integer > 0."
+                )
+            elif field_name == "default_api_pagination_limit":
+                raise ValueError(
+                    f"invalid pagination size limit {color(v)}. Must be a valid integer > 0."
+                )
+            else:
+                raise ValueError(
+                    f"invalid value for {color(field_name)}: {color(v)}. Must be a valid integer > 0."
+                )
+        return v
+
     # - Validation of Basic Settings-
     @field_validator("logging_level", "test_logging_level")
     @classmethod
@@ -204,15 +232,13 @@ class Settings(BaseSettings):
     @classmethod
     def validate_rate_limit_unprotected_routes(cls, v: str) -> str:
         """Validate rate_limit_unprotected_routes is a valid number > 0."""
-        try:
-            int_v = int(v)
-            if int_v < 1:
-                raise ValueError
-        except (ValueError, TypeError):
-            raise ValueError(
-                f"invalid rate limit {color(v)}. Must be a valid integer > 0."
-            )
-        return v
+        return cls._validate_positive_int_str(v, "rate_limit_unprotected_routes")
+
+    @field_validator("default_api_pagination_limit")
+    @classmethod
+    def validate_default_api_pagination_limit(cls, v: str) -> str:
+        """Validate default_api_pagination_limit is a valid number > 0."""
+        return cls._validate_positive_int_str(v, "default_api_pagination_limit")
 
     # - Validation of Environment Settings -
     @field_validator("backend_version")

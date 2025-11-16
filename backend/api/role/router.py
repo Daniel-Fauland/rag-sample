@@ -7,6 +7,7 @@ from models.role.request import RoleCreateRequest, RoleUpdateRequest
 from models.role.response import RoleModelBase, RoleModel, RoleCreateResponse, ListRoleResponse, ListRoleWithPermissionsResponse
 from database.session import get_session
 from errors import RoleNotFound, RoleAlreadyExists, XValueError
+from config import config
 
 
 role_router = APIRouter()
@@ -53,7 +54,7 @@ async def get_all_roles(order_by_field: str = Query(
         limit: int = Query(100,
                            description="The maximum number of records to return",
                            ge=1,
-                           le=500),
+                           le=config.default_api_pagination_limit),
         offset: int = Query(0,
                             description="How many records to skip",
                             ge=0),
@@ -82,7 +83,7 @@ async def get_all_roles_with_permissions(order_by_field: str = Query(
         limit: int = Query(100,
                            description="The maximum number of records to return",
                            ge=1,
-                           le=500),
+                           le=config.default_api_pagination_limit),
         offset: int = Query(0,
                             description="How many records to skip",
                             ge=0),
