@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field
+from typing import Sequence
+from database.schemas.user_roles import UserRole
 
 
 class RoleAssignmentModel(BaseModel):
@@ -19,3 +21,21 @@ class RoleAssignmentCreateResponse(BaseModel):
                           True])
     message: str = Field(..., description="Status message",
                          examples=["Role assigned successfully"])
+
+
+class ListRoleAssignmentModel(BaseModel):
+    limit: int = Field(..., description="The maximum number of role assignments to be retrieved", examples=[
+                       25])
+    offset: int = Field(...,
+                        description="How many role assignments to skip", examples=[75])
+    total_assignments: int = Field(..., description="The total number of role assignments in the db", examples=[
+        123])
+    current_assignments: int = Field(..., description="The number of role assignments retrieved right now", examples=[
+        25])
+    assignments: Sequence[UserRole] = Field(...,
+                                            description="The actual role assignment data")
+
+
+class ListRoleAssignmentResponse(ListRoleAssignmentModel):
+    assignments: list[RoleAssignmentModel] = Field(
+        ..., description="The actual role assignment data")

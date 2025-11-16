@@ -21,9 +21,16 @@ async def test_get_all_role_assignments_as_admin(client, db_session):
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) >= 2
-    for assignment in response_data:
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+    assert "limit" in response_data
+    assert "offset" in response_data
+    assert "total_assignments" in response_data
+    assert "current_assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) >= 2
+    for assignment in assignments:
         assert "user_id" in assignment
         assert "role_id" in assignment
         assert "assigned_at" in assignment
@@ -48,22 +55,25 @@ async def test_get_all_role_assignments_as_admin_with_query_parameter(client, db
     role_id = None
     order_by_field = "role_id"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/role-assignments?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) >= 2
-    for assignment in response_data:
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) >= 2
+    for assignment in assignments:
         assert "user_id" in assignment
         assert "role_id" in assignment
         assert "assigned_at" in assignment
         assert isinstance(assignment["user_id"], str)
         assert isinstance(assignment["role_id"], int)
         assert isinstance(assignment["assigned_at"], str)
-    role_ids = [assignment["role_id"] for assignment in response_data]
+    role_ids = [assignment["role_id"] for assignment in assignments]
     assert role_ids == sorted(
         role_ids), "role_id values should be sorted in ascending order"
 
@@ -72,15 +82,18 @@ async def test_get_all_role_assignments_as_admin_with_query_parameter(client, db
     role_id = 1
     order_by_field = "role_id"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/role-assignments?user_id={user_id}&role_id={role_id}&order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) == 1
-    for assignment in response_data:
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) == 1
+    for assignment in assignments:
         assert "user_id" in assignment
         assert "role_id" in assignment
         assert "assigned_at" in assignment
@@ -93,14 +106,17 @@ async def test_get_all_role_assignments_as_admin_with_query_parameter(client, db
     role_id = 12345
     order_by_field = "role_id"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/role-assignments?user_id={user_id}&role_id={role_id}&order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) == 0
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) == 0
 
     # - Test limits -
     user_id = None
@@ -113,9 +129,14 @@ async def test_get_all_role_assignments_as_admin_with_query_parameter(client, db
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) == 1
-    for assignment in response_data:
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) == 1
+    assert response_data["limit"] == limit
+    assert response_data["current_assignments"] == 1
+    for assignment in assignments:
         assert "user_id" in assignment
         assert "role_id" in assignment
         assert "assigned_at" in assignment
@@ -182,9 +203,12 @@ async def test_get_specific_role_assignments_as_normal_user(client, db_session):
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) == 1
-    for assignment in response_data:
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) == 1
+    for assignment in assignments:
         assert "user_id" in assignment
         assert "role_id" in assignment
         assert "assigned_at" in assignment
@@ -387,7 +411,8 @@ async def test_delete_role_assignment_as_admin(client, db_session):
 
     # Verify the assignment was deleted by trying to get it
     get_response = await client.get(f"/role-assignments?user_id={user.id}&role_id=1", headers=create_headers)
-    get_data = get_response.json()
+    get_response_data = get_response.json()
+    get_data = get_response_data["assignments"]
     assert len(get_data) == 0  # Should be empty now
 
 
@@ -499,7 +524,10 @@ async def test_role_assignment_crud_lifecycle(client, db_session):
     # 2. READ - Verify the assignment exists
     get_response = await client.get(f"/role-assignments?user_id={user.id}&role_id=1", headers=headers)
     assert get_response.status_code == 200
-    get_data = get_response.json()
+    get_response_data = get_response.json()
+    assert isinstance(get_response_data, dict)
+    assert "assignments" in get_response_data
+    get_data = get_response_data["assignments"]
     assert len(get_data) == 1
     assert get_data[0]["user_id"] == str(user.id)
     assert get_data[0]["role_id"] == 1
@@ -516,5 +544,8 @@ async def test_role_assignment_crud_lifecycle(client, db_session):
     # 4. VERIFY - Confirm the assignment is gone
     verify_response = await client.get(f"/role-assignments?user_id={user.id}&role_id=1", headers=headers)
     assert verify_response.status_code == 200
-    verify_data = verify_response.json()
+    verify_response_data = verify_response.json()
+    assert isinstance(verify_response_data, dict)
+    assert "assignments" in verify_response_data
+    verify_data = verify_response_data["assignments"]
     assert len(verify_data) == 0  # Should be empty now

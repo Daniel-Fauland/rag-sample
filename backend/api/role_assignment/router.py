@@ -5,10 +5,11 @@ from core.role_assignment.service import RoleAssignmentService
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker, get_current_user, check_ownership_permissions
 from models.role_assignment.request import RoleAssignmentCreateRequest, RoleAssignmentDeleteRequest
-from models.role_assignment.response import RoleAssignmentModel, RoleAssignmentCreateResponse
+from models.role_assignment.response import RoleAssignmentCreateResponse, ListRoleAssignmentResponse
 from models.user.response import UserModel
 from database.session import get_session
 from errors import RoleAssignmentNotFound
+from config import config
 
 
 role_assignment_router = APIRouter()
@@ -21,7 +22,7 @@ delete_role_assignment_all = PermissionChecker(
     [Permission(type=Type.delete, resource="role_assignment", context=Context.all)])
 
 
-@role_assignment_router.get("", status_code=status.HTTP_200_OK, response_model=list[RoleAssignmentModel])
+@role_assignment_router.get("", status_code=status.HTTP_200_OK, response_model=ListRoleAssignmentResponse)
 async def get_role_assignments(
         user_id: str | None = Query(
             None, description="Filter by user ID"),
@@ -30,14 +31,19 @@ async def get_role_assignments(
             "assigned_at", description="The field to order the records by"),
         order_by_direction: str = Query(
             "desc", description="Whether to sort the field asc or desc"),
-        limit: int = Query(
-            None, description="The maximum number of records to return"),
+        limit: int = Query(100,
+                           description="The maximum number of records to return",
+                           ge=1,
+                           le=config.default_api_pagination_limit),
+        offset: int = Query(0,
+                            description="How many records to skip",
+                            ge=0),
         session: AsyncSession = Depends(get_session),
         current_user: UserModel = Depends(get_current_user)):
     """Get all role assignments with optional filtering <br />
 
     Returns: <br />
-        list[RoleAssignmentModel]: List of role assignments with optional user/role details <br />
+        ListRoleAssignmentResponse: List of role assignments with optional user/role details and pagination metadata <br />
     """
     # Check permissions based on whether user is requesting their own data or all data
     if user_id is not None:
@@ -62,7 +68,8 @@ async def get_role_assignments(
         role_id=role_id,
         order_by_field=order_by_field,
         order_by_direction=order_by_direction,
-        limit=limit
+        limit=limit,
+        offset=offset
     )
 
     return assignments

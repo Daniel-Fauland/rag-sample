@@ -1,8 +1,9 @@
 import uuid
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Sequence, Optional
+from typing import Optional
 from database.schemas.user_roles import UserRole
 from models.role_assignment.request import RoleAssignmentCreateRequest, RoleAssignmentDeleteRequest
+from models.role_assignment.response import ListRoleAssignmentModel
 from core.role_assignment.helper import RoleAssignmentServiceHelper
 from core.user.service import UserService
 from core.role.service import RoleService
@@ -16,7 +17,7 @@ role_service = RoleService()
 class RoleAssignmentService:
     async def get_role_assignments(self, session: AsyncSession, user_id: Optional[uuid.UUID] = None,
                                    role_id: Optional[int] = None, order_by_field: str = "assigned_at",
-                                   order_by_direction: str = "desc", limit: int = None) -> Sequence[UserRole]:
+                                   order_by_direction: str = "desc", limit: int = 100, offset: int = 0) -> ListRoleAssignmentModel:
         """Get role assignments with optional filtering by user_id and/or role_id
 
         Args:
@@ -25,10 +26,11 @@ class RoleAssignmentService:
             role_id: Optional filter by role ID
             order_by_field: Field to order by (default: assigned_at)
             order_by_direction: Order direction (asc/desc)
-            limit: Maximum number of records to return
+            limit: Maximum number of records to return. Defaults to 100
+            offset: The number of records to offset/skip aka pagination
 
         Returns:
-            A sequence of UserRole objects
+            ListRoleAssignmentModel
         """
         # Build where clause based on filters
         where_clause = None
@@ -46,6 +48,7 @@ class RoleAssignmentService:
             order_by_field=order_by_field,
             order_by_direction=order_by_direction,
             limit=limit,
+            offset=offset,
             multiple=True
         )
 

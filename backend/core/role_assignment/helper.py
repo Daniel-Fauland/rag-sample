@@ -1,13 +1,14 @@
 import uuid
 from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import func
 from database.schemas.user_roles import UserRole
-from typing import Sequence
+from models.role_assignment.response import ListRoleAssignmentModel
 
 
 class RoleAssignmentServiceHelper:
     async def _get_role_assignments(self, session: AsyncSession, where_clause=None, order_by_field: str = None,
-                                    order_by_direction: str = "desc", limit: int = None, multiple: bool = False) -> UserRole | Sequence[UserRole] | None:
+                                    order_by_direction: str = "desc", limit: int = 100, offset: int = 0, multiple: bool = False) -> UserRole | ListRoleAssignmentModel | None:
         """Helper to get role assignments by a given where clause"""
 
         statement = select(UserRole)
@@ -24,17 +25,27 @@ class RoleAssignmentServiceHelper:
                 order_by_field, UserRole.assigned_at)
             order_direction = desc if order_by_direction != "asc" else asc
             statement = statement.order_by(order_direction(order_field))
-        if limit:
+        if offset:
+            statement = statement.offset(offset)
+        if limit is not None:
             statement = statement.limit(limit)
 
         result = await session.exec(statement)
         if multiple:
+            # Get total count of role assignments matching the where clause (without limit/offset)
+            # Use func.count(1) since UserRole has a composite primary key
+            count_statement = select(func.count(1)).select_from(UserRole)
+            if where_clause is not None:
+                count_statement = count_statement.where(where_clause)
+            count_result = await session.exec(count_statement)
+            total_assignments = count_result.one()
+
             # Return all role assignments that match the sql query
             assignments = result.all()
+            return ListRoleAssignmentModel(limit=limit, offset=offset, total_assignments=total_assignments, current_assignments=len(assignments), assignments=assignments)
         else:
             # Return only the first role assignment that matches the sql query
-            assignments = result.first()
-        return assignments
+            return result.first()
 
     async def _create_role_assignment(self, user_id: uuid.UUID, role_id: int, session: AsyncSession) -> UserRole:
         """Helper to create a new role assignment in the database"""
