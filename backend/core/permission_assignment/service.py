@@ -1,7 +1,8 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Sequence, Optional
+from typing import Optional
 from database.schemas.role_permissions import RolePermission
 from models.permission_assignment.request import PermissionAssignmentCreateRequest, PermissionAssignmentDeleteRequest
+from models.permission_assignment.response import ListPermissionAssignmentModel
 from core.permission_assignment.helper import PermissionAssignmentServiceHelper
 from core.role.service import RoleService
 from core.permission.service import PermissionService
@@ -17,7 +18,7 @@ class PermissionAssignmentService:
 
     async def get_permission_assignments(self, session: AsyncSession, role_id: Optional[int] = None,
                                          permission_id: Optional[int] = None, order_by_field: str = "assigned_at",
-                                         order_by_direction: str = "desc", limit: int = None) -> Sequence[RolePermission]:
+                                         order_by_direction: str = "desc", limit: int = 100, offset: int = 0) -> ListPermissionAssignmentModel:
         """Get permission assignments with optional filtering.
 
         Args:
@@ -26,14 +27,30 @@ class PermissionAssignmentService:
             permission_id: Optional permission ID to filter by
             order_by_field: Field to order by
             order_by_direction: Order direction (asc/desc)
-            limit: Maximum number of records to return
+            limit: Maximum number of records to return. Defaults to 100
+            offset: The number of records to offset/skip aka pagination
 
         Returns:
-            A sequence of RolePermission objects from the role_permissions table
+            ListPermissionAssignmentModel
         """
+        # Build where clause based on filters
+        where_clause = None
+        if role_id is not None and permission_id is not None:
+            where_clause = (RolePermission.role_id == role_id) & (
+                RolePermission.permission_id == permission_id)
+        elif role_id is not None:
+            where_clause = RolePermission.role_id == role_id
+        elif permission_id is not None:
+            where_clause = RolePermission.permission_id == permission_id
+
         return await service_helper._get_permission_assignments(
-            session=session, role_id=role_id, permission_id=permission_id,
-            order_by_field=order_by_field, order_by_direction=order_by_direction, limit=limit
+            session=session,
+            where_clause=where_clause,
+            order_by_field=order_by_field,
+            order_by_direction=order_by_direction,
+            limit=limit,
+            offset=offset,
+            multiple=True
         )
 
     async def create_permission_assignment(self, assignment_data: PermissionAssignmentCreateRequest,

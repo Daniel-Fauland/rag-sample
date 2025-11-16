@@ -18,7 +18,8 @@ async def create_test_role(client, headers, role_name="test_permission_assignmen
     # If role already exists (409), get it
     elif response.status_code == 409:
         roles_response = await client.get("/roles", headers=headers)
-        roles = roles_response.json()
+        roles_data = roles_response.json()
+        roles = roles_data["roles"]
         for role in roles:
             if role["name"] == role_name:
                 return role
@@ -41,10 +42,17 @@ async def test_get_all_permission_assignments_as_admin(client, db_session):
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+    assert "limit" in response_data
+    assert "offset" in response_data
+    assert "total_assignments" in response_data
+    assert "current_assignments" in response_data
+
+    assignments = response_data["assignments"]
     # At least some default permission assignments
-    assert len(response_data) >= 2
-    for assignment in response_data:
+    assert len(assignments) >= 2
+    for assignment in assignments:
         assert "role_id" in assignment
         assert "permission_id" in assignment
         assert "assigned_at" in assignment
@@ -70,15 +78,18 @@ async def test_get_all_permission_assignments_as_admin_with_query_parameter(clie
     permission_id = None
     order_by_field = "permission_id"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/permission-assignments?order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) >= 2
-    for assignment in response_data:
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) >= 2
+    for assignment in assignments:
         assert "role_id" in assignment
         assert "permission_id" in assignment
         assert "assigned_at" in assignment
@@ -86,7 +97,7 @@ async def test_get_all_permission_assignments_as_admin_with_query_parameter(clie
         assert isinstance(assignment["permission_id"], int)
         assert isinstance(assignment["assigned_at"], str)
     permission_ids = [assignment["permission_id"]
-                      for assignment in response_data]
+                      for assignment in assignments]
     assert permission_ids == sorted(
         permission_ids), "permission_id values should be sorted in ascending order"
 
@@ -95,16 +106,19 @@ async def test_get_all_permission_assignments_as_admin_with_query_parameter(clie
     permission_id = None
     order_by_field = "permission_id"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/permission-assignments?role_id={role_id}&order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
     # Admin role might have 0 or more permissions depending on migrations
-    assert len(response_data) >= 0
-    for assignment in response_data:
+    assert len(assignments) >= 0
+    for assignment in assignments:
         assert "role_id" in assignment
         assert "permission_id" in assignment
         assert "assigned_at" in assignment
@@ -118,15 +132,18 @@ async def test_get_all_permission_assignments_as_admin_with_query_parameter(clie
     permission_id = 1  # first permission
     order_by_field = "permission_id"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/permission-assignments?role_id={role_id}&permission_id={permission_id}&order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
     # Should have 0 or 1 results
-    for assignment in response_data:
+    for assignment in assignments:
         assert assignment["role_id"] == role_id
         assert assignment["permission_id"] == permission_id
 
@@ -135,14 +152,17 @@ async def test_get_all_permission_assignments_as_admin_with_query_parameter(clie
     permission_id = 99999  # nonexistent permission
     order_by_field = "permission_id"
     order_by_direction = "asc"
-    limit = 999
+    limit = 500
     response = await client.get(f"/permission-assignments?role_id={role_id}&permission_id={permission_id}&order_by_field={order_by_field}&order_by_direction={order_by_direction}&limit={limit}", headers=headers)
     response_data = response.json()
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) == 0
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) == 0
 
     # - Test limits -
     role_id = None
@@ -155,9 +175,14 @@ async def test_get_all_permission_assignments_as_admin_with_query_parameter(clie
 
     # Assertions
     assert response.status_code == 200
-    assert isinstance(response_data, list)
-    assert len(response_data) == 1
-    for assignment in response_data:
+    assert isinstance(response_data, dict)
+    assert "assignments" in response_data
+
+    assignments = response_data["assignments"]
+    assert len(assignments) == 1
+    assert response_data["limit"] == limit
+    assert response_data["current_assignments"] == 1
+    for assignment in assignments:
         assert "role_id" in assignment
         assert "permission_id" in assignment
         assert "assigned_at" in assignment
@@ -230,7 +255,8 @@ async def test_create_permission_assignment_as_admin(client, db_session):
 
     # Get existing assignments for the test role to find a permission not yet assigned
     existing_response = await client.get(f"/permission-assignments?role_id={test_role['id']}", headers=headers)
-    existing_assignments = existing_response.json()
+    existing_response_data = existing_response.json()
+    existing_assignments = existing_response_data["assignments"]
     assigned_permission_ids = {a["permission_id"]
                                for a in existing_assignments}
 
@@ -309,7 +335,8 @@ async def test_create_permission_assignment_duplicate(client, db_session):
     perms_data = perms_response.json()
     all_permissions = perms_data["permissions"]
     existing_response = await client.get(f"/permission-assignments?role_id={test_role['id']}", headers=headers)
-    existing_assignments = existing_response.json()
+    existing_response_data = existing_response.json()
+    existing_assignments = existing_response_data["assignments"]
     assigned_permission_ids = {a["permission_id"]
                                for a in existing_assignments}
 
@@ -427,7 +454,8 @@ async def test_delete_permission_assignment_as_admin(client, db_session):
     perms_data = perms_response.json()
     all_permissions = perms_data["permissions"]
     existing_response = await client.get(f"/permission-assignments?role_id={test_role['id']}", headers=create_headers)
-    existing_assignments = existing_response.json()
+    existing_response_data = existing_response.json()
+    existing_assignments = existing_response_data["assignments"]
     assigned_permission_ids = {a["permission_id"]
                                for a in existing_assignments}
 
@@ -460,7 +488,8 @@ async def test_delete_permission_assignment_as_admin(client, db_session):
 
     # Verify the assignment was deleted by trying to get it
     get_response = await client.get(f"/permission-assignments?role_id={test_role['id']}&permission_id={available_permission['id']}", headers=create_headers)
-    get_data = get_response.json()
+    get_response_data = get_response.json()
+    get_data = get_response_data["assignments"]
     assert len(get_data) == 0  # Should be empty now
 
 
@@ -557,7 +586,8 @@ async def test_permission_assignment_crud_lifecycle(client, db_session):
     perms_data = perms_response.json()
     all_permissions = perms_data["permissions"]
     existing_response = await client.get(f"/permission-assignments?role_id={test_role['id']}", headers=headers)
-    existing_assignments = existing_response.json()
+    existing_response_data = existing_response.json()
+    existing_assignments = existing_response_data["assignments"]
     assigned_permission_ids = {a["permission_id"]
                                for a in existing_assignments}
 
@@ -584,7 +614,10 @@ async def test_permission_assignment_crud_lifecycle(client, db_session):
     # 2. READ - Verify the assignment exists
     get_response = await client.get(f"/permission-assignments?role_id={test_role['id']}&permission_id={available_permission['id']}", headers=headers)
     assert get_response.status_code == 200
-    get_data = get_response.json()
+    get_response_data = get_response.json()
+    assert isinstance(get_response_data, dict)
+    assert "assignments" in get_response_data
+    get_data = get_response_data["assignments"]
     assert len(get_data) == 1
     assert get_data[0]["role_id"] == test_role["id"]
     assert get_data[0]["permission_id"] == available_permission["id"]
@@ -601,5 +634,8 @@ async def test_permission_assignment_crud_lifecycle(client, db_session):
     # 4. VERIFY - Confirm the assignment is gone
     verify_response = await client.get(f"/permission-assignments?role_id={test_role['id']}&permission_id={available_permission['id']}", headers=headers)
     assert verify_response.status_code == 200
-    verify_data = verify_response.json()
+    verify_response_data = verify_response.json()
+    assert isinstance(verify_response_data, dict)
+    assert "assignments" in verify_response_data
+    verify_data = verify_response_data["assignments"]
     assert len(verify_data) == 0  # Should be empty now

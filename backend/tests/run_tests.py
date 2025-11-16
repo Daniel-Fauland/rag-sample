@@ -29,6 +29,7 @@ def overwrite_env():
 
     env['LOGGING_LEVEL'] = config.test_logging_level
     env['RATE_LIMIT_UNPROTECTED_ROUTES'] = "9999"
+    env['DEFAULT_API_PAGINATION_LIMIT'] = "999"
     return env
 
 

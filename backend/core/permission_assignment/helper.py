@@ -1,50 +1,68 @@
-from sqlmodel import select
+from sqlmodel import select, asc, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Sequence, Optional
+from sqlalchemy import func
 from database.schemas.role_permissions import RolePermission
+from models.permission_assignment.response import ListPermissionAssignmentModel
+from typing import Sequence, Optional
 
 
 class PermissionAssignmentServiceHelper:
     """Helper class for permission assignment database operations."""
 
-    async def _get_permission_assignments(self, session: AsyncSession, role_id: Optional[int] = None,
-                                          permission_id: Optional[int] = None, order_by_field: str = "assigned_at",
-                                          order_by_direction: str = "desc", limit: int = None) -> Sequence[RolePermission]:
-        """Get permission assignments with optional filtering.
+    async def _get_permission_assignments(self, session: AsyncSession, where_clause=None, order_by_field: str = "assigned_at",
+                                          order_by_direction: str = "desc", limit: int = 100, offset: int = 0, multiple: bool = False) -> RolePermission | ListPermissionAssignmentModel | None:
+        """Helper to get permission assignments by a given where clause
 
         Args:
             session: Database session
-            role_id: Optional role ID to filter by
-            permission_id: Optional permission ID to filter by
+            where_clause: Optional SQLAlchemy where clause for filtering
             order_by_field: Field to order by
             order_by_direction: Order direction (asc/desc)
-            limit: Maximum number of records to return
+            limit: Maximum number of records to return. Defaults to 100
+            offset: The number of records to offset/skip aka pagination
+            multiple: Whether to return multiple results or just the first one
 
         Returns:
-            Sequence of RolePermission objects from the role_permissions table
+            RolePermission, ListPermissionAssignmentModel, or None
         """
-        query = select(RolePermission)
+        statement = select(RolePermission)
 
-        # Apply filters
-        if role_id is not None:
-            query = query.where(RolePermission.role_id == role_id)
-        if permission_id is not None:
-            query = query.where(RolePermission.permission_id == permission_id)
+        if where_clause is not None:
+            statement = statement.where(where_clause)
 
-        # Apply ordering
-        if hasattr(RolePermission, order_by_field):
-            order_column = getattr(RolePermission, order_by_field)
-            if order_by_direction.lower() == "asc":
-                query = query.order_by(order_column.asc())
-            else:
-                query = query.order_by(order_column.desc())
+        if order_by_field:
+            # Map allowed fields to RolePermission attributes for ordering
+            order_fields = {
+                "role_id": RolePermission.role_id,
+                "permission_id": RolePermission.permission_id,
+                "assigned_at": RolePermission.assigned_at
+            }
+            order_field = order_fields.get(order_by_field, RolePermission.assigned_at)
+            order_direction = desc if order_by_direction != "asc" else asc
+            statement = statement.order_by(order_direction(order_field))
 
-        # Apply limit
-        if limit:
-            query = query.limit(limit)
+        if offset:
+            statement = statement.offset(offset)
+        if limit is not None:
+            statement = statement.limit(limit)
 
-        result = await session.exec(query)
-        return result.all()
+        result = await session.exec(statement)
+
+        if multiple:
+            # Get total count of permission assignments matching the where clause (without limit/offset)
+            # Use func.count(1) since RolePermission has a composite primary key
+            count_statement = select(func.count(1)).select_from(RolePermission)
+            if where_clause is not None:
+                count_statement = count_statement.where(where_clause)
+            count_result = await session.exec(count_statement)
+            total_assignments = count_result.one()
+
+            # Return all permission assignments that match the sql query
+            assignments = result.all()
+            return ListPermissionAssignmentModel(limit=limit, offset=offset, total_assignments=total_assignments, current_assignments=len(assignments), assignments=assignments)
+        else:
+            # Return only the first permission assignment that matches the sql query
+            return result.first()
 
     async def _create_permission_assignment(self, role_id: int, permission_id: int, session: AsyncSession) -> RolePermission:
         """Create a new permission assignment.
@@ -99,9 +117,11 @@ class PermissionAssignmentServiceHelper:
         Returns:
             True if assignment exists, False otherwise
         """
-        query = select(RolePermission).where(
-            RolePermission.role_id == role_id,
-            RolePermission.permission_id == permission_id
+        where_clause = (RolePermission.role_id == role_id) & (
+            RolePermission.permission_id == permission_id)
+        assignment = await self._get_permission_assignments(
+            session=session,
+            where_clause=where_clause,
+            multiple=False
         )
-        result = await session.exec(query)
-        return result.first() is not None
+        return assignment is not None

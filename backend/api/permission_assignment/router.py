@@ -5,9 +5,10 @@ from core.permission_assignment.service import PermissionAssignmentService
 from models.auth import Permission, Type, Context
 from auth.auth import PermissionChecker
 from models.permission_assignment.request import PermissionAssignmentCreateRequest, PermissionAssignmentDeleteRequest
-from models.permission_assignment.response import PermissionAssignmentModel, PermissionAssignmentCreateResponse
+from models.permission_assignment.response import PermissionAssignmentCreateResponse, ListPermissionAssignmentResponse
 from database.session import get_session
 from errors import PermissionAssignmentNotFound
+from config import config
 
 
 permission_assignment_router = APIRouter()
@@ -22,7 +23,7 @@ delete_permission_assignment_all = PermissionChecker(
     [Permission(type=Type.delete, resource="permission_assignment", context=Context.all)])
 
 
-@permission_assignment_router.get("", status_code=status.HTTP_200_OK, response_model=list[PermissionAssignmentModel])
+@permission_assignment_router.get("", status_code=status.HTTP_200_OK, response_model=ListPermissionAssignmentResponse)
 async def get_permission_assignments(
         role_id: Optional[int] = Query(None, description="Filter by role ID"),
         permission_id: Optional[int] = Query(
@@ -31,8 +32,13 @@ async def get_permission_assignments(
             "assigned_at", description="The field to order the records by"),
         order_by_direction: str = Query(
             "desc", description="Whether to sort the field asc or desc"),
-        limit: int = Query(None,
-                           description="The maximum number of records to return"),
+        limit: int = Query(100,
+                           description="The maximum number of records to return",
+                           ge=1,
+                           le=config.default_api_pagination_limit),
+        offset: int = Query(0,
+                            description="How many records to skip",
+                            ge=0),
         session: AsyncSession = Depends(get_session),
         _: bool = Depends(read_permission_assignment_all)):
     """Get all permission assignments (role-permission relationships) in the database with optional filtering. <br />
@@ -43,24 +49,18 @@ async def get_permission_assignments(
         order_by_field: The field to order the records by <br />
         order_by_direction: Whether to sort the field asc or desc <br />
         limit: The maximum number of records to return <br />
+        offset: How many records to skip <br />
 
     Returns: <br />
-        list[PermissionAssignmentModel]: List of permission assignments with role and permission details <br />
+        ListPermissionAssignmentResponse: List of permission assignments with role and permission details and pagination metadata <br />
     """
 
     assignments = await service.get_permission_assignments(
         session=session, role_id=role_id, permission_id=permission_id,
-        order_by_field=order_by_field, order_by_direction=order_by_direction, limit=limit
+        order_by_field=order_by_field, order_by_direction=order_by_direction, limit=limit, offset=offset
     )
 
-    return [
-        PermissionAssignmentModel(
-            role_id=assignment.role_id,
-            permission_id=assignment.permission_id,
-            assigned_at=assignment.assigned_at
-        )
-        for assignment in assignments
-    ]
+    return assignments
 
 
 @permission_assignment_router.post("", status_code=status.HTTP_201_CREATED, response_model=PermissionAssignmentCreateResponse)
