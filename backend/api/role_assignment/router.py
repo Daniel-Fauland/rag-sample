@@ -16,10 +16,11 @@ role_assignment_router = APIRouter()
 service = RoleAssignmentService()
 
 # Permissions
+resource = "role_assignment"
 create_role_assignment_all = PermissionChecker(
-    [Permission(type=Type.create, resource="role_assignment", context=Context.all)])
+    [Permission(type=Type.create, resource=resource, context=Context.all)])
 delete_role_assignment_all = PermissionChecker(
-    [Permission(type=Type.delete, resource="role_assignment", context=Context.all)])
+    [Permission(type=Type.delete, resource=resource, context=Context.all)])
 
 
 @role_assignment_router.get("", status_code=status.HTTP_200_OK, response_model=ListRoleAssignmentResponse)
@@ -52,14 +53,14 @@ async def get_role_assignments(
             current_user=current_user,
             target_id=user_id,
             own_data_permissions=[Permission(
-                type=Type.read, resource="role_assignment", context=Context.me)],
+                type=Type.read, resource=resource, context=Context.me)],
             other_data_permissions=[Permission(
-                type=Type.read, resource="role_assignment", context=Context.all)]
+                type=Type.read, resource=resource, context=Context.all)]
         )
     else:
         # User is requesting all role assignments, requires "all" permission
         checker = PermissionChecker(
-            [Permission(type=Type.read, resource="role_assignment", context=Context.all)])
+            [Permission(type=Type.read, resource=resource, context=Context.all)])
         checker(current_user)
 
     assignments = await service.get_role_assignments(

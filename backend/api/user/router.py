@@ -342,9 +342,9 @@ async def get_specific_user(id: str = Path(..., description="The user email or u
         current_user=current_user,
         target_id=id,
         own_data_permissions=[Permission(
-            type="read", resource=resource, context="me")],
+            type=Type.read, resource=resource, context=Context.me)],
         other_data_permissions=[Permission(
-            type="read", resource=resource, context="all")]
+            type=Type.read, resource=resource, context=Context.all)]
     )
 
     # Now proceed with the database query
@@ -381,9 +381,9 @@ async def update_user(id: str = Path(..., description="The user email or uuid", 
         current_user=current_user,
         target_id=id,
         own_data_permissions=[Permission(
-            type="update", resource=resource, context="me")],
+            type=Type.update, resource=resource, context=Context.me)],
         other_data_permissions=[Permission(
-            type="update", resource=resource, context="all")]
+            type=Type.update, resource=resource, context=Context.all)]
     )
 
     # Convert Pydantic model to dict, excluding None values
@@ -422,9 +422,9 @@ async def delete_user(id: str = Path(..., description="The user email or uuid", 
         current_user=current_user,
         target_id=id,
         own_data_permissions=[Permission(
-            type="delete", resource=resource, context="me")],
+            type=Type.delete, resource=resource, context=Context.me)],
         other_data_permissions=[Permission(
-            type="delete", resource=resource, context="all")]
+            type=Type.delete, resource=resource, context=Context.all)]
     )
 
     # Now proceed with the database deletion
