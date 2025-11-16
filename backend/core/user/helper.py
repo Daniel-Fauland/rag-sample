@@ -7,7 +7,7 @@ from database.schemas.users import User
 from database.schemas.roles import Role
 from database.schemas.user_roles import UserRole
 from models.user.request import SignupRequest, BatchSignupRequest, BatchDeleteRequest, BatchUserUpdateRequest
-from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase, ListUserResponse
+from models.user.response import UserModel, BatchSignupResponseBase, BatchUpdateResponseBase, ListUserModel
 from utils.user import UserHelper
 from auth.jwt import JWTHandler
 from errors import UserInvalidPassword, InternalServerError
@@ -21,7 +21,7 @@ jwt_handler = JWTHandler()
 
 
 class ServiceHelper():
-    async def _get_users(self, session: AsyncSession, where_clause=None, order_by_field: str = None, order_by_direction: str = "desc", limit: int = 100, offset: int = 0, include_roles: bool = False, include_permissions: bool = False, multiple: bool = False) -> ListUserResponse | User | None:
+    async def _get_users(self, session: AsyncSession, where_clause=None, order_by_field: str = None, order_by_direction: str = "desc", limit: int = 100, offset: int = 0, include_roles: bool = False, include_permissions: bool = False, multiple: bool = False) -> ListUserModel | User | None:
         """Helper to get a user by a given where clause"""
         options = []
         if include_roles:
@@ -65,7 +65,7 @@ class ServiceHelper():
 
             # Return all users that match the sql query
             users = result.all()
-            return ListUserResponse(limit=limit, offset=offset, total_users=total_users, current_users=len(users), users=users)
+            return ListUserModel(limit=limit, offset=offset, total_users=total_users, current_users=len(users), users=users)
         else:
             # Return only the first user that matches the sql query
             return result.first()

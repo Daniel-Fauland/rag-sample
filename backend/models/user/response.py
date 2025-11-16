@@ -119,7 +119,7 @@ class PasswordUpdateResponse(BaseModel):
                          "Password changed successfully"])
 
 
-class ListUserResponse(BaseModel):
+class ListUserModel(BaseModel):
     limit: int = Field(..., description="The maximum number of users to be retrieved", examples=[
                        25])
     offset: int = Field(...,
@@ -129,3 +129,11 @@ class ListUserResponse(BaseModel):
     current_users: int = Field(..., description="The number of users retrieved right now", examples=[
         25])
     users: Sequence[User] = Field(..., description="The actual user data")
+
+
+class ListUserResponse(ListUserModel):
+    users: list[UserModelBase] = Field(..., description="The actual user data")
+
+
+class ListUserWithPermissionsResponse(ListUserModel):
+    users: list[UserModel] = Field(..., description="The actual user data")
