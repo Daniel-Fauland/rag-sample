@@ -1,0 +1,139 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fastapi-app
+
+resources:
+  - ../../base
+  # IMPORTANT: Secrets are NOT included in base for security reasons.
+  # You must provide secrets before deploying to production. Options:
+  #   1. Create secret.yaml files manually (DO NOT commit to git)
+  #   2. Use External Secrets Operator with a secret store (recommended)
+  #   3. Use Sealed Secrets for GitOps workflows
+  # See k8s/base/*/secret.yaml.example for required secret templates.
+
+# Production-specific patches
+patches:
+  # Increase backend replicas for production
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+    target:
+      kind: Deployment
+      name: backend
+
+  # Increase HPA for production
+  - patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 20
+    target:
+      kind: HorizontalPodAutoscaler
+      name: backend-hpa
+
+  # Increase PostgreSQL resources for production
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+    target:
+      kind: StatefulSet
+      name: postgres
+
+  # Increase PVC size for production
+  - patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 50Gi
+    target:
+      kind: PersistentVolumeClaim
+      name: postgres-pvc
+
+  # Increase Redis resources for production
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+    target:
+      kind: Deployment
+      name: redis
+
+  # Increase backend resources for production
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+    target:
+      kind: Deployment
+      name: backend
+
+  # Enable TLS on ingress for production
+  - patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: api.yourproductiondomain.com
+      - op: add
+        path: /spec/tls
+        value:
+          - hosts:
+              - api.yourproductiondomain.com
+            secretName: backend-tls-secret
+    target:
+      kind: Ingress
+      name: backend-ingress
+
+  # Add pod anti-affinity for HA
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: backend
+                  topologyKey: kubernetes.io/hostname
+    target:
+      kind: Deployment
+      name: backend
+
+# Override ConfigMap for production
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - LOGGING_LEVEL=WARNING
+      - IS_LOCAL=False
+      - DB_SSL=True
+      - WORKERS=8
+
+# Pod Disruption Budget for backend
+# Ensures at least 2 pods are always available during updates
+patchesStrategicMerge: []
+
+commonLabels:
+  environment: production

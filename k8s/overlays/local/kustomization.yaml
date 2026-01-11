@@ -1,0 +1,140 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fastapi-app
+
+resources:
+  - ../../base
+
+# Secrets for local development (placeholder values - DO NOT use in production)
+# These are generated inline so local development works out of the box
+secretGenerator:
+  - name: postgres-secret
+    literals:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=systemuser
+      - POSTGRES_PASSWORD=mysecretpassword
+    options:
+      disableNameSuffixHash: true
+  - name: redis-secret
+    literals:
+      - REDIS_PASSWORD=mysecretpassword
+    options:
+      disableNameSuffixHash: true
+  - name: backend-secret
+    literals:
+      - JWT_SECRET=replace-with-secure-secret-at-least-32-bytes
+    options:
+      disableNameSuffixHash: true
+
+# Local-specific patches
+patches:
+  # Reduce backend replicas for local development
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      kind: Deployment
+      name: backend
+
+  # Reduce HPA min/max replicas for local
+  - patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+    target:
+      kind: HorizontalPodAutoscaler
+      name: backend-hpa
+
+  # Reduce PostgreSQL resources for local
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+    target:
+      kind: StatefulSet
+      name: postgres
+
+  # Reduce PVC size for local
+  - patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 1Gi
+    target:
+      kind: PersistentVolumeClaim
+      name: postgres-pvc
+
+  # Reduce Redis resources for local
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+    target:
+      kind: Deployment
+      name: redis
+
+  # Reduce backend resources for local
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+    target:
+      kind: Deployment
+      name: backend
+
+  # Use NodePort for local access without ingress controller
+  - patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30080
+    target:
+      kind: Service
+      name: backend
+
+  # Delete ingress for local (use NodePort instead)
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: backend-ingress
+    target:
+      kind: Ingress
+      name: backend-ingress
+
+# Override ConfigMap for local development
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    literals:
+      - LOGGING_LEVEL=DEBUG
+      - IS_LOCAL=True
+      - IS_DOCKER=False  # Enables uvicorn --reload for hot-reload with Skaffold
+
+commonLabels:
+  environment: local

@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fastapi-app
+
+resources:
+  - namespace.yaml
+  # PostgreSQL
+  # Note: secret.yaml must be provided by overlay (see secret.yaml.example for template)
+  - postgres/pvc.yaml
+  - postgres/statefulset.yaml
+  - postgres/service.yaml
+  # Redis
+  # Note: secret.yaml must be provided by overlay (see secret.yaml.example for template)
+  - redis/deployment.yaml
+  - redis/service.yaml
+  # Backend
+  # Note: secret.yaml must be provided by overlay (see secret.yaml.example for template)
+  - backend/configmap.yaml
+  - backend/deployment.yaml
+  - backend/service.yaml
+  - backend/hpa.yaml
+  # Migrations
+  - migrations/job.yaml
+  # Ingress
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: fastapi-starter
+  app.kubernetes.io/managed-by: kustomize

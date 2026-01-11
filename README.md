@@ -35,6 +35,15 @@ Perfect for teams and developers who want to build production-grade FastAPI appl
 - [Running the Application](#running-the-application)
   - [Development Mode](#development-mode)
   - [Docker Mode](#docker-mode)
+  - [Kubernetes Mode](#kubernetes-mode)
+- [Kubernetes Deployment](#kubernetes-deployment)
+  - [Prerequisites for Kubernetes](#prerequisites-for-kubernetes)
+  - [Quick Start with Colima](#quick-start-with-colima)
+  - [Kubernetes Commands](#kubernetes-commands)
+  - [Development with Skaffold (Hot-Reload)](#development-with-skaffold-hot-reload)
+  - [Monitoring with Freelens](#monitoring-with-freelens)
+  - [Secrets Management](#secrets-management)
+  - [Stopping the Cluster](#stopping-the-cluster)
 - [Common Commands](#common-commands)
 - [Integration Tests](#integration-tests)
 - [Env Variables Overview](#env-variables-overview)
@@ -63,6 +72,7 @@ This sample provides a FastAPI backend with the following features:
 - [x] Using Redis for TTL based token blacklisting to handle JWT invalidation. See [auth/auth.py](./backend/auth/auth.py)
 - [x] IP based rate limiting on individual api routes. See [api/health/router.py](./backend/api/health/router.py)
 - [x] Streamlined setup with Makefile and Docker Compose for easy development
+- [x] Kubernetes deployment with Kustomize overlays. See [k8s/](./k8s/)
 
 > TODO: Mock KeyVault env values
 
@@ -449,6 +459,26 @@ make stop
 > [!NOTE]
 > When running in Docker mode, the backend uses the `backend/Dockerfile` and connects to databases via Docker networking.
 
+### Kubernetes Mode
+
+**Run the entire stack in a Kubernetes cluster** - Production-ready deployment with auto-scaling:
+
+```bash
+# Start a local Kubernetes cluster with Colima
+colima start --kubernetes --cpu 4 --memory 8
+
+# Deploy to local cluster
+cd backend
+make k8s-local-up
+
+# Access the API
+make k8s-port-forward
+```
+
+The backend will be available at [http://localhost:8000](http://localhost:8000)
+
+See [Kubernetes Deployment](#kubernetes-deployment) for detailed instructions.
+
 ### Additional Tips
 
 **Testing specific functions without starting the full backend:**
@@ -501,6 +531,18 @@ make run-docker-bg    # Run entire stack in Docker (background)
 make stop             # Stop all containers
 ```
 
+### Kubernetes Operations
+
+```bash
+make k8s-local-up     # Deploy to local Kubernetes cluster
+make k8s-local-down   # Remove deployment from local cluster
+make k8s-status       # Show deployment status
+make k8s-logs         # Stream backend logs
+make k8s-port-forward # Forward port 8000 to localhost
+make k8s-migrate      # Run database migrations
+make k8s-restart      # Restart backend deployment
+```
+
 ### Utilities
 
 ```bash
@@ -510,6 +552,311 @@ make help             # Show all available commands
 
 > [!TIP]
 > All Makefile commands include colored output and helpful status messages to guide you through the process.
+
+## Kubernetes Deployment
+
+This project includes production-ready Kubernetes manifests using [Kustomize](https://kustomize.io/) for environment-specific configurations.
+
+### Prerequisites for Kubernetes
+
+**Required:**
+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) - Kubernetes CLI
+- [Docker](https://www.docker.com/) - For building container images
+- A Kubernetes cluster (local or remote)
+
+**For Local Development (recommended):**
+
+- [Colima](https://github.com/abiosoft/colima) - Lightweight container runtime with Kubernetes support (macOS/Linux)
+- [Skaffold](https://skaffold.dev/) - For hot-reload development in Kubernetes
+- [Freelens](https://github.com/freelensapp/freelens) - Kubernetes IDE for monitoring and management
+
+**Install Colima (macOS):**
+
+```bash
+brew install colima
+```
+
+**Install Skaffold (macOS):**
+
+```bash
+brew install skaffold
+```
+
+**Install Freelens (macOS):**
+
+```bash
+brew install --cask freelens
+```
+
+### Quick Start with Colima
+
+**1. Start a Kubernetes cluster:**
+
+```bash
+# Start Colima with Kubernetes enabled
+colima start --kubernetes --cpu 4 --memory 8 --disk 20
+```
+
+This creates a local Kubernetes cluster with:
+- 4 CPU cores
+- 8 GB RAM
+- 20 GB disk space
+
+**2. Deploy the application:**
+
+```bash
+cd backend
+
+# Build image and deploy to local cluster
+make k8s-local-up
+```
+
+This will:
+- Build the Docker image
+- Load it into the cluster
+- Deploy PostgreSQL, Redis, and the FastAPI backend
+- Run database migrations automatically
+
+**3. Access the API:**
+
+```bash
+# Start port forwarding
+make k8s-port-forward
+```
+
+Open your browser to:
+- API: [http://localhost:8000](http://localhost:8000)
+- Swagger Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+**4. Check deployment status:**
+
+```bash
+make k8s-status
+```
+
+### Kubernetes Commands
+
+All commands are run from the `backend/` directory:
+
+#### Deployment
+
+```bash
+make k8s-build          # Build Docker image
+make k8s-local-up       # Deploy to local cluster
+make k8s-local-down     # Remove local deployment
+make k8s-prod-up        # Deploy to production (with confirmation)
+make k8s-prod-down      # Remove production deployment
+```
+
+#### Monitoring & Debugging
+
+```bash
+make k8s-status         # Show all resources (pods, services, etc.)
+make k8s-logs           # Stream logs from backend pods
+make k8s-logs POD=name  # Stream logs from specific pod
+make k8s-shell          # Open shell in backend pod
+```
+
+#### Operations
+
+```bash
+make k8s-port-forward   # Forward port 8000 to localhost
+make k8s-migrate        # Run database migrations
+make k8s-restart        # Restart backend deployment
+```
+
+### Development with Skaffold (Hot-Reload)
+
+[Skaffold](https://skaffold.dev/) enables hot-reload during Kubernetes development. When you change Python files, they're synced directly into the running container without rebuilding the image.
+
+#### Prerequisites
+
+Install Skaffold:
+
+```bash
+brew install skaffold
+```
+
+#### Quick Start
+
+```bash
+cd backend
+
+# Start development mode with hot-reload
+make skaffold-dev
+```
+
+This will:
+1. Build the development Docker image
+2. Deploy to your local Kubernetes cluster
+3. Forward port 8000 to localhost
+4. Watch for file changes and sync them automatically
+
+**The API is available at [http://localhost:8000](http://localhost:8000)**
+
+#### How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Your Editor                                                    │
+│  ┌─────────────┐                                                │
+│  │ Edit .py    │                                                │
+│  │ file        │                                                │
+│  └──────┬──────┘                                                │
+│         │                                                       │
+│         ▼                                                       │
+│  ┌─────────────┐    File Sync    ┌─────────────────────────┐   │
+│  │  Skaffold   │ ───────────────▶│  Backend Pod            │   │
+│  │  (watching) │   (no rebuild)  │  ┌─────────────────────┐│   │
+│  └─────────────┘                 │  │ uvicorn --reload    ││   │
+│                                  │  │ (detects changes)   ││   │
+│                                  │  └─────────────────────┘│   │
+│                                  └─────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+1. **Skaffold watches** your local `backend/` directory for changes
+2. **File sync** copies changed `.py` files directly into the running container
+3. **Uvicorn's `--reload`** detects the file changes and restarts the application
+4. **No image rebuild** needed - changes appear in seconds
+
+#### Skaffold Commands
+
+```bash
+make skaffold-dev      # Start dev mode with hot-reload (recommended)
+make skaffold-run      # Build and deploy once (no hot-reload)
+make skaffold-delete   # Delete Skaffold deployment
+```
+
+#### What Gets Synced
+
+The following files are automatically synced without rebuilding:
+
+| File Pattern | Destination |
+|--------------|-------------|
+| `**/*.py` | `/app/` |
+| `templates/**` | `/app/templates/` |
+| `static/**` | `/app/static/` |
+
+#### When to Use Skaffold vs Other Methods
+
+| Method | Best For | Hot-Reload |
+|--------|----------|------------|
+| `make skaffold-dev` | K8s development with live changes | Yes |
+| `make k8s-local-up` | Testing final deployment | No |
+| `make run` (local) | Quick local development without K8s | Yes |
+
+> [!TIP]
+> For the fastest development loop, use `make skaffold-dev`. For testing production-like behavior, use `make k8s-local-up`.
+
+### Monitoring with Freelens
+
+[Freelens](https://github.com/freelensapp/freelens) provides a powerful GUI for managing Kubernetes clusters.
+
+**1. Open Freelens:**
+
+After installing, launch Freelens from your Applications folder or via:
+
+```bash
+open -a Freelens
+```
+
+**2. Connect to your cluster:**
+
+Freelens automatically detects your Kubernetes contexts. Select `colima` from the cluster list.
+
+**3. Navigate to your namespace:**
+
+In the left sidebar, go to **Workloads** → **Pods** and select the `fastapi-app` namespace from the dropdown.
+
+**4. What you can do in Freelens:**
+
+| Feature | How to Access |
+|---------|---------------|
+| View pod logs | Click on a pod → Logs tab |
+| Open shell in pod | Click on a pod → Shell button |
+| Monitor resources | Cluster → Overview |
+| View events | Events in sidebar |
+| Edit resources | Click resource → Edit button |
+| Scale deployments | Workloads → Deployments → Scale |
+
+**5. Useful views for this project:**
+
+- **Workloads → Pods**: See all running containers (backend, postgres, redis)
+- **Workloads → Deployments**: Monitor backend deployment and HPA status
+- **Network → Services**: View service endpoints
+- **Config → ConfigMaps**: View application configuration
+- **Config → Secrets**: View secrets (values hidden by default)
+- **Storage → Persistent Volume Claims**: Monitor database storage
+
+### Secrets Management
+
+**Local Development**: Secrets are handled automatically. The local overlay includes example secrets with placeholder values that work out of the box for local development.
+
+**Production Deployment**: You must configure secrets before deploying to production. The example secrets are **not** included in the production overlay for security reasons.
+
+**Required secrets:**
+
+| Secret Name | Keys | Template Location |
+|-------------|------|-------------------|
+| `postgres-secret` | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `k8s/base/postgres/secret.yaml.example` |
+| `redis-secret` | `REDIS_PASSWORD` | `k8s/base/redis/secret.yaml.example` |
+| `backend-secret` | `JWT_SECRET` | `k8s/base/backend/secret.yaml.example` |
+
+**Options for production secrets:**
+
+1. **Manual creation** (simple but not recommended for teams):
+   ```bash
+   # Create secrets directly in the cluster
+   kubectl create secret generic postgres-secret \
+     --namespace=fastapi-app \
+     --from-literal=POSTGRES_DB=mydb \
+     --from-literal=POSTGRES_USER=myuser \
+     --from-literal=POSTGRES_PASSWORD=mysecurepassword
+   ```
+
+2. **External Secrets Operator** (recommended for cloud deployments):
+   - Syncs secrets from Azure Key Vault, AWS Secrets Manager, HashiCorp Vault, etc.
+   - See [External Secrets documentation](https://external-secrets.io/)
+
+3. **Sealed Secrets** (recommended for GitOps):
+   - Encrypts secrets so they can be safely committed to git
+   - See [Sealed Secrets documentation](https://github.com/bitnami-labs/sealed-secrets)
+
+> [!IMPORTANT]
+> Never commit actual secret values to git. The `k8s/**/secret.yaml` files are in `.gitignore` to prevent accidental commits.
+
+### Stopping the Cluster
+
+**Remove the deployment but keep the cluster:**
+
+```bash
+make k8s-local-down
+```
+
+**Stop Colima entirely:**
+
+```bash
+colima stop
+```
+
+**Restart the cluster later:**
+
+```bash
+colima start
+# Then redeploy
+make k8s-local-up
+```
+
+**Delete the cluster completely:**
+
+```bash
+colima delete
+```
+
+> [!TIP]
+> For more detailed Kubernetes documentation, see [k8s/README.md](./k8s/README.md)
 
 ## Integration Tests
 

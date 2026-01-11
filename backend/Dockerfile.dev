@@ -1,0 +1,49 @@
+# Development Dockerfile with hot-reload support for Skaffold
+# This Dockerfile is optimized for development with file syncing
+
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+
+# Install build dependencies (needed for some Python packages)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Ensure installed tools can be executed out of the box
+ENV UV_TOOL_BIN_DIR=/usr/local/bin
+
+# Install dependencies first (for better caching)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
+
+# Copy the application code
+COPY . /app
+
+# Install the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
+
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Set environment variables for development
+# IS_DOCKER=False enables uvicorn's --reload flag in main.py
+ENV IS_DOCKER=False
+
+# Reset the entrypoint
+ENTRYPOINT []
+
+# Run with reload enabled (IS_DOCKER=False triggers reload mode in main.py)
+CMD ["uv", "run", "main.py"]

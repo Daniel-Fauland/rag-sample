@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+data:
+  # Basic Settings
+  LOGGING_LEVEL: "INFO"
+  FASTAPI_PROJECT_NAME: "FastAPI"
+  FASTAPI_WELCOME_MSG: "Welcome to the backend! Access the swagger docs at '/docs'"
+  FASTAPI_PORT: "8000"
+  RATE_LIMIT_UNPROTECTED_ROUTES: "10"
+  DEFAULT_API_PAGINATION_LIMIT: "500"
+
+  # Environment Settings
+  BACKEND_VERSION: "0.0.1"
+  IS_LOCAL: "False"
+  IS_DOCKER: "True"
+
+  # User Settings
+  DEFAULT_USER_ROLE: "user"
+
+  # Database Settings (non-sensitive)
+  DB_PORT: "5432"
+  DB_SSL: "False"
+  DB_ECHO: "False"
+  DB_POOL_SIZE: "20"
+  DB_MAX_OVERFLOW: "30"
+  DB_POOL_TIMEOUT: "15"
+  DB_POOL_RECYCLE: "3600"
+
+  # Redis Settings (non-sensitive)
+  REDIS_PORT: "6379"
+  REDIS_POOL_SIZE: "20"
+
+  # JWT Settings (non-sensitive)
+  JWT_ALGORITHM: "HS256"
+  JWT_ACCESS_TOKEN_EXPIRY: "15"
+  JWT_REFRESH_TOKEN_EXPIRY: "30"
+
+  # Performance Settings
+  THREAD_POOL: "80"
+  WORKERS: "4"

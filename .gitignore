@@ -201,8 +201,14 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .cursor/
+.claude/
+CLAUDE.md
 
 # Marimo
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Kubernetes secrets (never commit actual secrets, only .example templates)
+k8s/**/secret.yaml
+!k8s/**/secret.yaml.example

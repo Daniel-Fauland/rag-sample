@@ -1,0 +1,66 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: fastapi-backend
+
+build:
+  # Don't push images - keep them local (for Colima/minikube/kind)
+  local:
+    push: false
+  artifacts:
+    - image: fastapi-backend
+      context: backend
+      docker:
+        dockerfile: Dockerfile.dev
+      sync:
+        manual:
+          # Sync Python source files directly into the container
+          - src: "**/*.py"
+            dest: /app
+          # Sync templates if any
+          - src: "templates/**"
+            dest: /app/templates
+          # Sync static files if any
+          - src: "static/**"
+            dest: /app/static
+
+manifests:
+  kustomize:
+    paths:
+      - k8s/overlays/local
+
+portForward:
+  - resourceType: service
+    resourceName: backend
+    namespace: fastapi-app
+    port: 8000
+    localPort: 8000
+
+profiles:
+  # Development profile with file sync (default)
+  - name: dev
+    activation:
+      - command: dev
+    build:
+      artifacts:
+        - image: fastapi-backend
+          context: backend
+          docker:
+            dockerfile: Dockerfile.dev
+          sync:
+            manual:
+              - src: "**/*.py"
+                dest: /app
+
+  # Production-like profile without file sync
+  - name: prod
+    build:
+      artifacts:
+        - image: fastapi-backend
+          context: backend
+          docker:
+            dockerfile: Dockerfile
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/production
